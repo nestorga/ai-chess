@@ -27,10 +27,11 @@ An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic
    ```
 
 3. Set up your API key:
-   - Copy the `.env` file and add your Anthropic API key:
+   - Create a `.env` file in the project root and add your Anthropic API key:
    ```bash
    ANTHROPIC_API_KEY=your_api_key_here
    ```
+   - **Important**: The `.env` file is automatically loaded when you use the npm scripts (`npm run play`, etc.)
 
 ## Usage
 
