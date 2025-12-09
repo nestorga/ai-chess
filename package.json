@@ -1,0 +1,46 @@
+{
+  "name": "ai-chess",
+  "version": "1.0.0",
+  "description": "AI Chess Agent with strategic working memory powered by Claude Haiku",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "play": "tsx src/index.ts play",
+    "play:ai-vs-ai": "tsx src/index.ts play --mode ai-ai",
+    "list": "tsx src/index.ts list"
+  },
+  "keywords": [
+    "chess",
+    "ai",
+    "agent",
+    "mastra",
+    "claude"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.53",
+    "@mastra/core": "^0.24.6",
+    "@mastra/memory": "^0.15.12",
+    "@mastra/libsql": "^0.16.3",
+    "@mastra/fastembed": "^0.10.7",
+    "@mastra/loggers": "^0.10.19",
+    "chess.js": "^1.4.0",
+    "zod": "^4.1.13",
+    "chalk": "^5.3.0",
+    "blessed": "^0.1.81",
+    "commander": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/blessed": "^0.1.25",
+    "mastra": "^0.18.6",
+    "typescript": "^5.9.3",
+    "tsx": "^4.19.2"
+  }
+}
