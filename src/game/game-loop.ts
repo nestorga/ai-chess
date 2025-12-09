@@ -102,11 +102,14 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
   displayMessage(`🎮 Starting Human vs AI game! You: ${playerColor.toUpperCase()}, AI: ${aiColor.toUpperCase()}`);
   await sleep(2000);
 
+  // Persist AI working memory across turns
+  let aiWorkingMemory = '';
+
   while (!game.isGameOver()) {
     const currentTurn = game.getTurn();
 
     if (currentTurn === playerColor) {
-      displayGameState(game, undefined, 'Your turn! Make your move.');
+      displayGameState(game, aiWorkingMemory, 'Your turn! Make your move.');
 
       const validMoves = game.getValidMoves();
       const move = await promptForMove(validMoves);
@@ -120,7 +123,7 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
       displayMessage(`✓ You played: ${move}`);
       await sleep(1000);
     } else {
-      displayGameState(game, undefined, 'AI is thinking...');
+      displayGameState(game, aiWorkingMemory, 'AI is thinking...');
 
       try {
         logInfo(`AI (${aiColor}) is generating move for position: ${game.getFEN()}`);
@@ -136,28 +139,27 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
         const responseText = response.text || '';
 
         // Retrieve working memory from the agent's memory instance
-        let workingMemory = '';
         try {
           const memory = await aiMemory.getWorkingMemory({
             resourceId: game.getGameId(),
             threadId: `game-${game.getGameId()}`
           });
-          workingMemory = memory || '';
+          aiWorkingMemory = memory || '';
         } catch (err) {
           logError('Working Memory Retrieval', err);
         }
 
-        logInfo(`AI response received. Text length: ${responseText.length}, Memory length: ${workingMemory.length}`);
+        logInfo(`AI response received. Text length: ${responseText.length}, Memory length: ${aiWorkingMemory.length}`);
 
         // Extract move from response for display (move was already executed by make-move tool)
         const move = extractMoveFromResponse(responseText);
 
         if (move) {
-          displayGameState(game, workingMemory, `AI played: ${move}`);
+          displayGameState(game, aiWorkingMemory, `AI played: ${move}`);
           logInfo(`AI successfully played: ${move}`);
         } else {
           // Couldn't extract move from text, check if board changed
-          displayGameState(game, workingMemory, 'AI made a move');
+          displayGameState(game, aiWorkingMemory, 'AI made a move');
           const lastMove = game.getLastMove();
           if (lastMove) {
             displayMessage(`AI played: ${lastMove} (extracted from board)`);

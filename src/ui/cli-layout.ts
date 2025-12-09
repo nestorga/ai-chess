@@ -63,10 +63,10 @@ export function initializeScreen(): void {
         fg: 'magenta'
       }
     },
-    label: ' AI Working Memory ',
+    label: ' AI Working Memory (↑↓ to scroll) ',
     keys: true,
     vi: true,
-    mouse: true
+    mouse: false
   });
 
   // Status bar (bottom - 15%)
@@ -96,11 +96,49 @@ export function initializeScreen(): void {
   // Enable scrolling in memory box with arrow keys
   memoryBox.focus();
 
-  // Quit on Escape, q, or Control-C
+  // Quit on Escape, q, or Control-C (with confirmation)
   screen.key(['escape', 'q', 'C-c'], () => {
-    cleanupScreen();
-    process.exit(0);
+    // Show confirmation dialog
+    const confirmBox = blessed.box({
+      top: 'center',
+      left: 'center',
+      width: 50,
+      height: 7,
+      content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {red-fg}N{/red-fg} to continue',
+      tags: true,
+      border: {
+        type: 'line'
+      },
+      style: {
+        fg: 'white',
+        bg: 'red',
+        border: {
+          fg: 'red'
+        }
+      },
+      label: ' Confirm Quit '
+    });
+
+    screen.append(confirmBox);
+    confirmBox.focus();
+    screen.render();
+
+    const onKey = (ch: any, key: any) => {
+      if (key.name === 'y') {
+        cleanupScreen();
+        process.exit(0);
+      } else if (key.name === 'n' || key.name === 'escape') {
+        confirmBox.detach();
+        screen.render();
+        screen.removeListener('keypress', onKey);
+      }
+    };
+
+    screen.on('keypress', onKey);
   });
+
+  // Display help text in status bar
+  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`);
 
   screen.render();
 }
@@ -139,9 +177,12 @@ ${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White'
     memoryBox!.setContent('{center}{gray-fg}No working memory yet...{/gray-fg}{/center}');
   }
 
-  // Update status
+  // Update status with message and help text
+  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`;
   if (statusMessage) {
-    statusBox!.setContent(`\n  {cyan-fg}${statusMessage}{/cyan-fg}`);
+    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n  ${helpText}`);
+  } else {
+    statusBox!.setContent(`\n  ${helpText}`);
   }
 
   screen!.render();
@@ -193,9 +234,12 @@ ${blackFormatted}
   memoryBox!.setContent(dualMemoryContent);
   memoryBox!.setScrollPerc(0);
 
-  // Update status
+  // Update status with message and help text
+  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory`;
   if (statusMessage) {
-    statusBox!.setContent(`\n  {cyan-fg}${statusMessage}{/cyan-fg}`);
+    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n  ${helpText}`);
+  } else {
+    statusBox!.setContent(`\n  ${helpText}`);
   }
 
   screen!.render();
@@ -253,7 +297,8 @@ export function displayMessage(message: string): void {
     initializeScreen();
   }
 
-  statusBox!.setContent(`\n  {cyan-fg}${message}{/cyan-fg}`);
+  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`;
+  statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n  ${helpText}`);
   screen!.render();
 }
 
