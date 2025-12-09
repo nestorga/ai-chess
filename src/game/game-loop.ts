@@ -23,13 +23,13 @@ function extractMoveFromResponse(response: string): string | null {
 }
 
 async function promptForMove(validMoves: string[]): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const screen = getScreen();
     if (!screen) {
       throw new Error('Screen not initialized');
     }
 
-    displayMessage('Your move? (or "moves" to see valid moves, ESC to quit)');
+    displayMessage('Your move? (or "moves" to see valid moves)');
 
     // Create input box at the bottom
     const inputBox = blessed.textbox({
@@ -53,6 +53,21 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     });
 
     screen.append(inputBox);
+
+    // Keep screen-level handlers active by handling keys on the screen, not just the input
+    const screenKeyHandler = (ch: any, key: any) => {
+      // ESC or Q to quit
+      if (key.name === 'escape' || key.name === 'q') {
+        screen.removeListener('keypress', screenKeyHandler);
+        inputBox.detach();
+        // Trigger the global quit handler
+        screen.emit('keypress', ch, key);
+        reject(new Error('User quit'));
+        return;
+      }
+    };
+
+    screen.on('keypress', screenKeyHandler);
     inputBox.focus();
 
     inputBox.on('submit', (value: string) => {
@@ -67,6 +82,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
       }
 
       if (validMoves.includes(move)) {
+        screen.removeListener('keypress', screenKeyHandler);
         inputBox.detach();
         screen.render();
         resolve(move);
@@ -79,9 +95,11 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     });
 
     inputBox.on('cancel', () => {
+      screen.removeListener('keypress', screenKeyHandler);
       inputBox.detach();
-      cleanupScreen();
-      process.exit(0);
+      // Trigger the global quit handler
+      screen.emit('keypress', null, { name: 'escape' });
+      reject(new Error('User quit'));
     });
 
     screen.render();
@@ -112,7 +130,14 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
       displayGameState(game, aiWorkingMemory, 'Your turn! Make your move.');
 
       const validMoves = game.getValidMoves();
-      const move = await promptForMove(validMoves);
+
+      let move: string;
+      try {
+        move = await promptForMove(validMoves);
+      } catch (error) {
+        // User quit during input
+        return;
+      }
 
       const result = game.executeMove(move);
       if (!result.success) {

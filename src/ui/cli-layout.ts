@@ -104,7 +104,7 @@ export function initializeScreen(): void {
       left: 'center',
       width: 50,
       height: 7,
-      content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {red-fg}N{/red-fg} to continue',
+      content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue',
       tags: true,
       border: {
         type: 'line'
