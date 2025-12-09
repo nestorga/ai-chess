@@ -1,10 +1,9 @@
-import readline from 'readline';
-import chalk from 'chalk';
+import blessed from 'blessed';
 import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, displayMessage } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult } from '../types/chess-types.js';
 
@@ -24,45 +23,74 @@ function extractMoveFromResponse(response: string): string | null {
 }
 
 async function promptForMove(validMoves: string[]): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
   return new Promise((resolve) => {
-    console.log(chalk.cyan('\nYour move? (or type "moves" to see valid moves, "quit" to exit)'));
+    const screen = getScreen();
+    if (!screen) {
+      throw new Error('Screen not initialized');
+    }
 
-    const askMove = () => {
-      rl.question(chalk.white('> '), (input) => {
-        const move = input.trim();
+    displayMessage('Your move? (or "moves" to see valid moves, ESC to quit)');
 
-        if (move.toLowerCase() === 'quit') {
-          rl.close();
-          process.exit(0);
+    // Create input box at the bottom
+    const inputBox = blessed.textbox({
+      bottom: 3,
+      left: 2,
+      height: 3,
+      width: '50%',
+      border: {
+        type: 'line'
+      },
+      style: {
+        fg: 'white',
+        bg: 'blue',
+        border: {
+          fg: 'green'
         }
+      },
+      label: ' Enter Move ',
+      keys: true,
+      inputOnFocus: true
+    });
 
-        if (move.toLowerCase() === 'moves') {
-          console.log(chalk.gray('\nValid moves:'));
-          console.log(chalk.white(validMoves.join(', ')));
-          askMove();
-          return;
-        }
+    screen.append(inputBox);
+    inputBox.focus();
 
-        if (validMoves.includes(move)) {
-          rl.close();
-          resolve(move);
-        } else {
-          console.log(chalk.red(`Invalid move: "${move}". Please try again.`));
-          askMove();
-        }
-      });
-    };
+    inputBox.on('submit', (value: string) => {
+      const move = value.trim();
 
-    askMove();
+      if (move.toLowerCase() === 'moves') {
+        displayMessage(`Valid moves: ${validMoves.join(', ')}`);
+        inputBox.clearValue();
+        inputBox.focus();
+        screen.render();
+        return;
+      }
+
+      if (validMoves.includes(move)) {
+        inputBox.detach();
+        screen.render();
+        resolve(move);
+      } else {
+        displayMessage(`Invalid move: "${move}". Try again.`);
+        inputBox.clearValue();
+        inputBox.focus();
+        screen.render();
+      }
+    });
+
+    inputBox.on('cancel', () => {
+      inputBox.detach();
+      cleanupScreen();
+      process.exit(0);
+    });
+
+    screen.render();
   });
 }
 
 export async function humanVsAIGame(playerColor: Color): Promise<void> {
+  initializeScreen();
+
   const game = new GameEngine();
   gameState.setGame(game);
 
@@ -71,10 +99,7 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
 
   logInfo(`Starting Human vs AI game - Player: ${playerColor}, AI: ${aiColor}`);
 
-  console.log(chalk.bold.green(`\n🎮 Starting Human vs AI game!`));
-  console.log(chalk.white(`You are playing as ${chalk.bold(playerColor.toUpperCase())}`));
-  console.log(chalk.white(`AI is playing as ${chalk.bold(aiColor.toUpperCase())}\n`));
-
+  displayMessage(`🎮 Starting Human vs AI game! You: ${playerColor.toUpperCase()}, AI: ${aiColor.toUpperCase()}`);
   await sleep(2000);
 
   while (!game.isGameOver()) {
@@ -88,11 +113,11 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
 
       const result = game.executeMove(move);
       if (!result.success) {
-        console.log(chalk.red(`Error: ${result.error}`));
+        displayMessage(`Error: ${result.error}`);
         continue;
       }
 
-      console.log(chalk.green(`\n✓ You played: ${move}`));
+      displayMessage(`✓ You played: ${move}`);
       await sleep(1000);
     } else {
       displayGameState(game, undefined, 'AI is thinking...');
@@ -124,45 +149,34 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
 
         logInfo(`AI response received. Text length: ${responseText.length}, Memory length: ${workingMemory.length}`);
 
-        displayGameState(game, workingMemory, 'AI made a move');
-
+        // Extract move from response for display (move was already executed by make-move tool)
         const move = extractMoveFromResponse(responseText);
 
-        if (!move) {
-          logError('Move Extraction Failed', new Error(`No valid move found in response: ${responseText.substring(0, 200)}`));
-          console.log(chalk.red('AI failed to provide a valid move. Selecting random move...'));
-          const validMoves = game.getValidMoves();
-          const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-          game.executeMove(randomMove);
-          console.log(chalk.yellow(`AI played: ${randomMove}`));
-          logInfo(`Fallback move selected: ${randomMove}`);
+        if (move) {
+          displayGameState(game, workingMemory, `AI played: ${move}`);
+          logInfo(`AI successfully played: ${move}`);
         } else {
-          const result = game.executeMove(move);
-          if (!result.success) {
-            logError('Invalid Move', new Error(`AI attempted invalid move: ${move}. Error: ${result.error}`));
-            console.log(chalk.red(`AI's move "${move}" was invalid. Selecting random move...`));
-            const validMoves = game.getValidMoves();
-            const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-            game.executeMove(randomMove);
-            console.log(chalk.yellow(`AI played: ${randomMove}`));
-            logInfo(`Fallback move selected: ${randomMove}`);
+          // Couldn't extract move from text, check if board changed
+          displayGameState(game, workingMemory, 'AI made a move');
+          const lastMove = game.getLastMove();
+          if (lastMove) {
+            displayMessage(`AI played: ${lastMove} (extracted from board)`);
+            logInfo(`Move extracted from board: ${lastMove}`);
           } else {
-            console.log(chalk.cyan(`\n✓ AI played: ${move}`));
-            logInfo(`AI successfully played: ${move}`);
+            logError('Move Extraction Failed', new Error(`No move found in response: ${responseText.substring(0, 200)}`));
           }
         }
 
         await sleep(2000);
       } catch (error) {
         logError('AI Turn Error', error);
-        console.log(chalk.red(`Error during AI turn - check chess-errors.log for details`));
-        console.log(chalk.gray(`Brief: ${(error as Error).message}`));
+        displayMessage(`Error during AI turn - check chess-errors.log`);
         const validMoves = game.getValidMoves();
         const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
         game.executeMove(randomMove);
-        console.log(chalk.yellow(`AI played (fallback): ${randomMove}`));
+        displayMessage(`AI played (fallback): ${randomMove}`);
         logInfo(`Fallback move after error: ${randomMove}`);
-        await sleep(3000); // Give user more time to see the error
+        await sleep(3000);
       }
     }
   }
@@ -183,12 +197,28 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
   const blackPlayer = playerColor === 'black' ? 'Human' : `AI-${aiColor}`;
 
   const savedPath = await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI');
-  console.log(chalk.green(`Game saved to: ${savedPath}\n`));
+
+  // Wait for user to press a key before cleaning up
+  await new Promise<void>(resolve => {
+    const screen = getScreen();
+    if (screen) {
+      const handler = () => resolve();
+      screen.once('keypress', handler);
+    } else {
+      resolve();
+    }
+  });
+
+  cleanupScreen();
+
+  console.log(`Game saved to: ${savedPath}\n`);
 
   gameState.clearGame();
 }
 
 export async function aiVsAIGame(): Promise<void> {
+  initializeScreen();
+
   const game = new GameEngine();
   gameState.setGame(game);
 
@@ -197,10 +227,12 @@ export async function aiVsAIGame(): Promise<void> {
 
   logInfo('Starting AI vs AI game');
 
-  console.log(chalk.bold.green(`\n🤖 Starting AI vs AI game!`));
-  console.log(chalk.white(`Watch two AI agents battle it out!\n`));
-
+  displayMessage('🤖 Starting AI vs AI game! Watch two AI agents battle!');
   await sleep(2000);
+
+  // Retrieve both working memories for display
+  let whiteWorkingMemory = '';
+  let blackWorkingMemory = '';
 
   while (!game.isGameOver()) {
     const currentTurn = game.getTurn();
@@ -211,8 +243,8 @@ export async function aiVsAIGame(): Promise<void> {
     try {
       displayDualAgentState(
         game,
-        undefined,
-        undefined,
+        whiteWorkingMemory,
+        blackWorkingMemory,
         `${currentColor.toUpperCase()} AI is thinking...`
       );
 
@@ -236,47 +268,44 @@ export async function aiVsAIGame(): Promise<void> {
           threadId: `${currentColor}-thread`
         });
         workingMemory = memory || '';
+
+        // Update the appropriate memory
+        if (currentColor === 'white') {
+          whiteWorkingMemory = workingMemory;
+        } else {
+          blackWorkingMemory = workingMemory;
+        }
       } catch (err) {
         logError(`${currentColor} Working Memory Retrieval`, err);
       }
 
       logInfo(`AI (${currentColor}) response received. Text length: ${responseText.length}, Memory length: ${workingMemory.length}`);
 
+      // Extract move from response for display (move was already executed by make-move tool)
       const move = extractMoveFromResponse(responseText);
 
-      if (!move) {
-        logError(`${currentColor} Move Extraction Failed`, new Error(`No valid move in response: ${responseText.substring(0, 200)}`));
-        console.log(chalk.red(`${currentColor.toUpperCase()} AI failed to provide a valid move.`));
-        const validMoves = game.getValidMoves();
-        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-        game.executeMove(randomMove);
-        console.log(chalk.yellow(`${currentColor.toUpperCase()} played (fallback): ${randomMove}`));
-        logInfo(`Fallback move: ${randomMove}`);
+      if (move) {
+        displayDualAgentState(game, whiteWorkingMemory, blackWorkingMemory, `${currentColor.toUpperCase()} played: ${move}`);
+        logInfo(`AI (${currentColor}) successfully played: ${move}`);
       } else {
-        const result = game.executeMove(move);
-        if (!result.success) {
-          logError(`${currentColor} Invalid Move`, new Error(`Attempted: ${move}. Error: ${result.error}`));
-          console.log(chalk.red(`${currentColor.toUpperCase()}'s move "${move}" was invalid.`));
-          const validMoves = game.getValidMoves();
-          const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-          game.executeMove(randomMove);
-          console.log(chalk.yellow(`${currentColor.toUpperCase()} played (fallback): ${randomMove}`));
-          logInfo(`Fallback move: ${randomMove}`);
+        // Couldn't extract move from text, check if board changed
+        const lastMove = game.getLastMove();
+        if (lastMove) {
+          displayDualAgentState(game, whiteWorkingMemory, blackWorkingMemory, `${currentColor.toUpperCase()} played: ${lastMove}`);
+          logInfo(`Move extracted from board: ${lastMove}`);
         } else {
-          console.log(chalk.cyan(`\n✓ ${currentColor.toUpperCase()} played: ${move}`));
-          logInfo(`AI (${currentColor}) successfully played: ${move}`);
+          logError(`${currentColor} Move Extraction Failed`, new Error(`No move in response: ${responseText.substring(0, 200)}`));
         }
       }
 
       await sleep(3000);
     } catch (error) {
       logError(`${currentColor} AI Turn Error`, error);
-      console.log(chalk.red(`Error during ${currentColor.toUpperCase()} AI turn - check chess-errors.log`));
-      console.log(chalk.gray(`Brief: ${(error as Error).message}`));
+      displayMessage(`Error during ${currentColor.toUpperCase()} AI turn - check chess-errors.log`);
       const validMoves = game.getValidMoves();
       const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
       game.executeMove(randomMove);
-      console.log(chalk.yellow(`${currentColor.toUpperCase()} played (fallback): ${randomMove}`));
+      displayMessage(`${currentColor.toUpperCase()} played (fallback): ${randomMove}`);
       logInfo(`Fallback move after error: ${randomMove}`);
       await sleep(3000);
     }
@@ -295,7 +324,21 @@ export async function aiVsAIGame(): Promise<void> {
   };
 
   const savedPath = await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI');
-  console.log(chalk.green(`Game saved to: ${savedPath}\n`));
+
+  // Wait for user to press a key before cleaning up
+  await new Promise<void>(resolve => {
+    const screen = getScreen();
+    if (screen) {
+      const handler = () => resolve();
+      screen.once('keypress', handler);
+    } else {
+      resolve();
+    }
+  });
+
+  cleanupScreen();
+
+  console.log(`Game saved to: ${savedPath}\n`);
 
   gameState.clearGame();
 }
