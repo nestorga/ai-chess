@@ -35,8 +35,9 @@ function createChessMemory(agentName: string): Memory {
   });
 }
 
-export function createChessAgent(agentName: string): Agent {
-  return new Agent({
+export function createChessAgent(agentName: string): { agent: Agent; memory: Memory } {
+  const memory = createChessMemory(agentName);
+  const agent = new Agent({
     name: agentName,
     instructions: `# ROLE DEFINITION
 You are an expert chess player named "${agentName}" competing in a chess match. Your goal is to play strong, strategic chess and win the game.
@@ -136,6 +137,8 @@ Play strong chess and may the best player win!`,
       getBoardState,
       getGameHistory
     },
-    memory: createChessMemory(agentName)
+    memory
   });
+
+  return { agent, memory };
 }

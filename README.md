@@ -72,6 +72,16 @@ View a previously played game:
 npm run play -- load <filename>
 ```
 
+### Debugging and Error Logs
+
+If you encounter errors during gameplay, check the `chess-errors.log` file in the project root directory. This file contains detailed error information including:
+- Timestamps for each error
+- Full error messages and stack traces
+- Context about what operation was being performed
+- AI move generation details
+
+The log file is automatically created when errors occur and can help diagnose issues with API keys, network connectivity, or game logic problems.
+
 ## How It Works
 
 ### Architecture
