@@ -1,9 +1,8 @@
-import blessed from 'blessed';
 import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getMemoryBox, displayMessage } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getForm, getInputBox, displayMessage } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult } from '../types/chess-types.js';
 
@@ -24,77 +23,59 @@ function extractMoveFromResponse(response: string): string | null {
 
 async function promptForMove(validMoves: string[]): Promise<string> {
   return new Promise((resolve) => {
+    const form = getForm();
+    const inputBox = getInputBox();
     const screen = getScreen();
-    if (!screen) {
-      throw new Error('Screen not initialized');
+
+    if (!form || !inputBox || !screen) {
+      throw new Error('UI not initialized');
     }
+
+    // Show form and clear previous value
+    form.show();
+    inputBox.clearValue();
 
     displayMessage('Your move? (or "moves" to see valid moves)');
 
-    // Create input box at the bottom
-    const inputBox = blessed.textbox({
-      bottom: 3,
-      left: 2,
-      height: 3,
-      width: '50%',
-      border: {
-        type: 'line'
-      },
-      style: {
-        fg: 'white',
-        bg: 'blue',
-        border: {
-          fg: 'green'
-        },
-        focus: {
-          border: {
-            fg: 'yellow'
-          }
-        }
-      },
-      label: ' Enter Move ',
-      keys: true,
-      inputOnFocus: true,
-      focusable: true
-    });
-
-    screen.append(inputBox);
-
-    // Enable Tab key to explicitly focus memory box
-    inputBox.key(['tab', 'S-tab'], () => {
-      const memory = getMemoryBox();
-      if (memory) {
-        memory.focus();
-        screen.render();
-      }
-      return false;
-    });
-
-    inputBox.focus();
-
-    inputBox.on('submit', (value: string) => {
-      const move = value.trim();
+    // Handle submit event
+    const submitHandler = () => {
+      const move = inputBox.value.trim();
 
       if (move.toLowerCase() === 'moves') {
         displayMessage(`Valid moves: ${validMoves.join(', ')}`);
         inputBox.clearValue();
-        inputBox.focus();
-        screen.render();
+        // Stay in input mode, re-prompt
+        inputBox.readInput(() => {
+          form.submit();
+        });
         return;
       }
 
       if (validMoves.includes(move)) {
-        inputBox.detach();
+        // Valid move - hide form and resolve
+        form.hide();
+        form.removeListener('submit', submitHandler);
         screen.render();
         resolve(move);
       } else {
         displayMessage(`Invalid move: "${move}". Try again.`);
         inputBox.clearValue();
-        inputBox.focus();
-        screen.render();
+        // Stay in input mode, re-prompt
+        inputBox.readInput(() => {
+          form.submit();
+        });
       }
+    };
+
+    form.on('submit', submitHandler);
+
+    // Manually start input mode
+    inputBox.readInput(() => {
+      // This callback fires when input completes (Enter or Escape)
+      form.submit();
     });
 
+    inputBox.focus();
     screen.render();
   });
 }

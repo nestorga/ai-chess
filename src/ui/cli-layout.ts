@@ -8,6 +8,8 @@ let screen: blessed.Widgets.Screen | null = null;
 let boardBox: blessed.Widgets.BoxElement | null = null;
 let memoryBox: blessed.Widgets.ScrollableBoxElement | null = null;
 let statusBox: blessed.Widgets.BoxElement | null = null;
+let form: blessed.Widgets.FormElement | null = null;
+let inputBox: blessed.Widgets.TextboxElement | null = null;
 
 export function initializeScreen(): void {
   if (screen) return;
@@ -101,19 +103,48 @@ export function initializeScreen(): void {
   screen.append(memoryBox);
   screen.append(statusBox);
 
-  // Enable Tab on memory box to cycle back to input (if it exists)
-  memoryBox.key(['tab', 'S-tab'], () => {
-    // Look for input box in children and focus it
-    const children = screen.children;
-    for (const child of children) {
-      if (child.options.label === ' Enter Move ') {
-        child.focus();
-        screen.render();
-        return false;
-      }
+  // Create form for Tab navigation between input and memory
+  form = blessed.form({
+    parent: screen,
+    bottom: 3,
+    left: 2,
+    width: '50%',
+    height: 3,
+    keys: true,
+    vi: true,
+    hidden: true,  // Initially hidden, shown when prompting for move
+    style: {
+      fg: 'white',
+      bg: 'blue'
     }
-    // If no input box found, do nothing
-    return false;
+  });
+
+  // Create input box as child of form
+  inputBox = blessed.textbox({
+    parent: form,
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    border: {
+      type: 'line'
+    },
+    style: {
+      fg: 'white',
+      bg: 'blue',
+      border: {
+        fg: 'green'
+      },
+      focus: {
+        border: {
+          fg: 'yellow'
+        }
+      }
+    },
+    label: ' Enter Move ',
+    keys: true,
+    inputOnFocus: false,  // Don't auto-activate - we'll call readInput() manually
+    focusable: true
   });
 
   // Display help text in status bar
@@ -268,6 +299,8 @@ export function cleanupScreen(): void {
     boardBox = null;
     memoryBox = null;
     statusBox = null;
+    form = null;
+    inputBox = null;
   }
 }
 
@@ -287,4 +320,12 @@ export function getScreen(): blessed.Widgets.Screen | null {
 
 export function getMemoryBox(): blessed.Widgets.ScrollableBoxElement | null {
   return memoryBox;
+}
+
+export function getForm(): blessed.Widgets.FormElement | null {
+  return form;
+}
+
+export function getInputBox(): blessed.Widgets.TextboxElement | null {
+  return inputBox;
 }
