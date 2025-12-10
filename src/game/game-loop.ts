@@ -2,7 +2,7 @@ import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive, setDualAgentMode, updateDualAgentMemories } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult, ModelName } from '../types/chess-types.js';
 import { getModelId } from '../types/model-types.js';
@@ -246,6 +246,9 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
 export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: ModelName = 'haiku'): Promise<void> {
   initializeScreen();
 
+  // Enable dual-agent mode for Tab switching
+  setDualAgentMode(true);
+
   // Focus memory box for scrolling (since there's no input box in AI vs AI)
   getMemoryBox()?.focus();
   getScreen()?.render();
@@ -272,12 +275,8 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
     const currentColor = currentTurn;
 
     try {
-      displayDualAgentState(
-        game,
-        whiteWorkingMemory,
-        blackWorkingMemory,
-        `${currentColor.toUpperCase()} AI is thinking...`
-      );
+      displayGameState(game, undefined, `${currentColor.toUpperCase()} AI is thinking...`);
+      updateDualAgentMemories(whiteWorkingMemory, blackWorkingMemory);
 
       logInfo(`AI (${currentColor}) is generating move for position: ${game.getFEN()}`);
 
@@ -316,13 +315,15 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
       const move = extractMoveFromResponse(responseText);
 
       if (move) {
-        displayDualAgentState(game, whiteWorkingMemory, blackWorkingMemory, `${currentColor.toUpperCase()} played: ${move}`);
+        displayGameState(game, undefined, `${currentColor.toUpperCase()} played: ${move}`);
+        updateDualAgentMemories(whiteWorkingMemory, blackWorkingMemory);
         logInfo(`AI (${currentColor}) successfully played: ${move}`);
       } else {
         // Couldn't extract move from text, check if board changed
         const lastMove = game.getLastMove();
         if (lastMove) {
-          displayDualAgentState(game, whiteWorkingMemory, blackWorkingMemory, `${currentColor.toUpperCase()} played: ${lastMove}`);
+          displayGameState(game, undefined, `${currentColor.toUpperCase()} played: ${lastMove}`);
+          updateDualAgentMemories(whiteWorkingMemory, blackWorkingMemory);
           logInfo(`Move extracted from board: ${lastMove}`);
         } else {
           logError(`${currentColor} Move Extraction Failed`, new Error(`No move in response: ${responseText.substring(0, 200)}`));
@@ -367,6 +368,9 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
       resolve();
     }
   });
+
+  // Disable dual-agent mode on cleanup
+  setDualAgentMode(false);
 
   cleanupScreen();
 

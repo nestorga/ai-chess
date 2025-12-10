@@ -14,6 +14,12 @@ let inputBox: blessed.Widgets.BoxElement | null = null;
 let isInputActive = false;
 let globalKeyHandler: ((ch: string, key: any) => void) | null = null;
 
+// State for dual-agent memory switching
+let isDualAgentMode = false;
+let currentDisplayedAgent: 'white' | 'black' = 'white';
+let cachedWhiteMemory = '';
+let cachedBlackMemory = '';
+
 export function initializeScreen(): void {
   if (screen) return;
 
@@ -314,8 +320,17 @@ function setupGlobalKeyHandler(): void {
       return;
     }
 
-    // Tab: Focus switching (works anytime)
+    // Tab: Focus switching OR dual-agent memory switching
     if (key.name === 'tab' && !key.shift) {
+      // In dual-agent mode, Tab switches between white/black memories
+      if (isDualAgentMode && screen!.focused === memoryBox) {
+        // Toggle agent
+        currentDisplayedAgent = currentDisplayedAgent === 'white' ? 'black' : 'white';
+        refreshDualAgentDisplay();
+        return;
+      }
+
+      // Normal focus cycling for human vs AI mode
       if (screen!.focused === inputBox && inputBox!.visible) {
         memoryBox?.focus();
       } else if (screen!.focused === memoryBox) {
@@ -401,4 +416,35 @@ export function setInputContent(text: string): void {
 
 export function setInputActive(active: boolean): void {
   isInputActive = active;
+}
+
+export function setDualAgentMode(enabled: boolean): void {
+  isDualAgentMode = enabled;
+  currentDisplayedAgent = 'white';  // Reset to white when mode changes
+}
+
+export function updateDualAgentMemories(whiteMemory: string, blackMemory: string): void {
+  cachedWhiteMemory = whiteMemory;
+  cachedBlackMemory = blackMemory;
+
+  // Refresh display with current agent
+  refreshDualAgentDisplay();
+}
+
+function refreshDualAgentDisplay(): void {
+  if (!memoryBox || !isDualAgentMode) return;
+
+  const memory = currentDisplayedAgent === 'white' ? cachedWhiteMemory : cachedBlackMemory;
+  const formattedMemory = formatWorkingMemory(memory || '{gray-fg}No memory yet...{/gray-fg}');
+
+  // Update label to show current agent and Tab instruction
+  const agentName = currentDisplayedAgent === 'white' ? 'WHITE' : 'BLACK';
+  const nextAgent = currentDisplayedAgent === 'white' ? 'Black' : 'White';
+  memoryBox.setLabel(` ${agentName} Agent Memory (Tab→${nextAgent}, ↑↓ scroll) `);
+
+  // Update content
+  memoryBox.setContent(formattedMemory);
+  memoryBox.setScrollPerc(0);  // Scroll to top when switching
+
+  screen?.render();
 }
