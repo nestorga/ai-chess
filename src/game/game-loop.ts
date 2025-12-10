@@ -4,6 +4,7 @@ import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
 import { displayGameState, displayGameOver, initializeScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive, setDualAgentMode, updateDualAgentMemories } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
+import { saveWorkingMemory, appendMemorySummary } from '../utils/memory-persistence.js';
 import type { Color, GameResult, ModelName } from '../types/chess-types.js';
 import { getModelId } from '../types/model-types.js';
 
@@ -201,6 +202,16 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
             threadId: `game-${game.getGameId()}`
           });
           aiWorkingMemory = memory || '';
+
+          // Save working memory to file for persistence and auditability
+          if (aiWorkingMemory) {
+            await saveWorkingMemory(
+              game.getGameId(),
+              `AI-${aiColor.charAt(0).toUpperCase() + aiColor.slice(1)}`,
+              aiWorkingMemory,
+              game.getMoveNumber()
+            );
+          }
         } catch (err) {
           logError('Working Memory Retrieval', err);
         }
@@ -256,6 +267,17 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
 
   const modelInfo = getModelId(modelName);
   await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI', modelInfo);
+
+  // Append game summary to AI's memory log
+  const gameSummary = `
+Game Result: ${winner === 'draw' ? 'Draw' : `${winner?.toUpperCase()} wins`}
+Reason: ${reason}
+Total Moves: ${game.getMoveNumber()}
+AI Color: ${aiColor}
+Model: ${modelInfo}
+PGN: ${game.getPGN()}
+`;
+  await appendMemorySummary(game.getGameId(), `AI-${aiColor.charAt(0).toUpperCase() + aiColor.slice(1)}`, gameSummary);
 
   // Keep screen active until user quits with Ctrl+C (handled by global handler)
   // Game state remains visible for review
@@ -335,6 +357,16 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
         } else {
           blackWorkingMemory = workingMemory;
         }
+
+        // Save working memory to file for persistence and auditability
+        if (workingMemory) {
+          await saveWorkingMemory(
+            game.getGameId(),
+            `${currentColor.charAt(0).toUpperCase() + currentColor.slice(1)}-AI`,
+            workingMemory,
+            game.getMoveNumber()
+          );
+        }
       } catch (err) {
         logError(`${currentColor} Working Memory Retrieval`, err);
       }
@@ -387,6 +419,18 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
 
   const modelInfo = `White: ${getModelId(whiteModel)}, Black: ${getModelId(blackModel)}`;
   await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI', modelInfo);
+
+  // Append game summary to both AI agents' memory logs
+  const gameSummary = `
+Game Result: ${winner === 'draw' ? 'Draw' : `${winner?.toUpperCase()} wins`}
+Reason: ${reason}
+Total Moves: ${game.getMoveNumber()}
+White Model: ${getModelId(whiteModel)}
+Black Model: ${getModelId(blackModel)}
+PGN: ${game.getPGN()}
+`;
+  await appendMemorySummary(game.getGameId(), 'White-AI', gameSummary);
+  await appendMemorySummary(game.getGameId(), 'Black-AI', gameSummary);
 
   // Keep screen active until user quits with Ctrl+C (handled by global handler)
   // Tab switching and scrolling remain functional for reviewing the game
