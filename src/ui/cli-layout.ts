@@ -165,14 +165,10 @@ export function displayGameState(
   const moveNumber = game.getMoveNumber();
 
   // Update board display
-  const boardContent = `
-{center}{bold}{cyan-fg}AI CHESS MATCH{/cyan-fg}{/bold}{/center}
-
-${board}
+  const boardContent = `{center}${board}
 
 {bold}{yellow-fg}Move #${moveNumber} - ${turn === 'white' ? "White's" : "Black's"} turn{/yellow-fg}{/bold}
-${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White' : 'Black') + ' king is in check!{/red-fg}{/bold}' : ''}
-`;
+${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White' : 'Black') + ' king is in check!{/red-fg}{/bold}' : ''}{/center}`;
 
   boardBox!.setContent(boardContent);
 
@@ -211,14 +207,10 @@ export function displayDualAgentState(
   const moveNumber = game.getMoveNumber();
 
   // Update board display
-  const boardContent = `
-{center}{bold}{cyan-fg}AI vs AI CHESS MATCH{/cyan-fg}{/bold}{/center}
-
-${board}
+  const boardContent = `{center}${board}
 
 {bold}{yellow-fg}Move #${moveNumber} - ${turn === 'white' ? "White's" : "Black's"} turn{/yellow-fg}{/bold}
-${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White' : 'Black') + ' king is in check!{/red-fg}{/bold}' : ''}
-`;
+${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White' : 'Black') + ' king is in check!{/red-fg}{/bold}' : ''}{/center}`;
 
   boardBox!.setContent(boardContent);
 
@@ -264,20 +256,18 @@ export function displayGameOver(
 
   const board = renderBoard(game.getFEN());
 
-  const gameOverContent = `
-{center}{bold}{cyan-fg}${'═'.repeat(40)}{/cyan-fg}{/bold}{/center}
-{center}{bold}{white-fg}GAME OVER{/white-fg}{/bold}{/center}
-{center}{bold}{cyan-fg}${'═'.repeat(40)}{/cyan-fg}{/bold}{/center}
+  const gameOverContent = `{center}{bold}{cyan-fg}${'═'.repeat(40)}{/cyan-fg}{/bold}
+{bold}{white-fg}GAME OVER{/white-fg}{/bold}
+{bold}{cyan-fg}${'═'.repeat(40)}{/cyan-fg}{/bold}
 
 ${board}
 
 ${winner === 'draw'
-    ? `{center}{bold}{yellow-fg}Result: Draw by ${reason}{/yellow-fg}{/bold}{/center}`
-    : `{center}{bold}{green-fg}Winner: ${winner.toUpperCase()} by ${reason}!{/green-fg}{/bold}{/center}`
+    ? `{bold}{yellow-fg}Result: Draw by ${reason}{/yellow-fg}{/bold}`
+    : `{bold}{green-fg}Winner: ${winner.toUpperCase()} by ${reason}!{/green-fg}{/bold}`
 }
 
-{center}{gray-fg}Total moves: ${game.getMoveNumber()}{/gray-fg}{/center}
-`;
+{gray-fg}Total moves: ${game.getMoveNumber()}{/gray-fg}{/center}`;
 
   boardBox!.setContent(gameOverContent);
   statusBox!.setContent('\n  {yellow-fg}Press any key to continue...{/yellow-fg}');
@@ -297,12 +287,22 @@ export function cleanupScreen(): void {
   }
 
   if (screen) {
-    screen.destroy();
-    screen = null;
-    boardBox = null;
-    memoryBox = null;
-    statusBox = null;
-    inputBox = null;
+    try {
+      // Restore cursor and clear screen before destroying
+      screen.program.showCursor();
+      screen.program.normalBuffer();
+
+      // Destroy screen gracefully
+      screen.destroy();
+    } catch (err) {
+      // Suppress cleanup errors - we're exiting anyway
+    } finally {
+      screen = null;
+      boardBox = null;
+      memoryBox = null;
+      statusBox = null;
+      inputBox = null;
+    }
   }
 }
 

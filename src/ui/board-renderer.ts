@@ -12,8 +12,8 @@ export function renderBoard(fen: string, lastMove?: string): string {
 
   let output = '\n';
 
-  output += '    a  b  c  d  e  f  g  h\n';
-  output += '  ┌──┬──┬──┬──┬──┬──┬──┬──┐\n';
+  output += '  a  b  c  d  e  f  g  h\n';
+  output += '┌──┬──┬──┬──┬──┬──┬──┬──┐\n';
 
   ranks.forEach((rank, rankIndex) => {
     const rankNumber = 8 - rankIndex;
@@ -24,28 +24,12 @@ export function renderBoard(fen: string, lastMove?: string): string {
       if (char >= '1' && char <= '8') {
         const emptySquares = parseInt(char);
         for (let i = 0; i < emptySquares; i++) {
-          const isLight = (rankIndex + fileIndex) % 2 === 0;
-          const bgColor = isLight ? chalk.bgWhite : chalk.bgBlackBright;
-          output += bgColor('  ') + '│';
+          output += '  │';
           fileIndex++;
         }
       } else {
         const piece = PIECES[char] || char;
-        const isLight = (rankIndex + fileIndex) % 2 === 0;
-        const isWhitePiece = char === char.toUpperCase();
-
-        let cell;
-        if (isLight) {
-          cell = isWhitePiece
-            ? chalk.bgWhite.black(` ${piece}`)
-            : chalk.bgWhite.red(` ${piece}`);
-        } else {
-          cell = isWhitePiece
-            ? chalk.bgBlackBright.white(` ${piece}`)
-            : chalk.bgBlackBright.red(` ${piece}`);
-        }
-
-        output += cell + '│';
+        output += ` ${piece}│`;
         fileIndex++;
       }
     }
@@ -53,15 +37,15 @@ export function renderBoard(fen: string, lastMove?: string): string {
     output += ` ${rankNumber}\n`;
 
     if (rankIndex < 7) {
-      output += '  ├──┼──┼──┼──┼──┼──┼──┼──┤\n';
+      output += '├──┼──┼──┼──┼──┼──┼──┼──┤\n';
     }
   });
 
-  output += '  └──┴──┴──┴──┴──┴──┴──┴──┘\n';
-  output += '    a  b  c  d  e  f  g  h\n';
+  output += '└──┴──┴──┴──┴──┴──┴──┴──┘\n';
+  output += '  a  b  c  d  e  f  g  h\n';
 
   if (lastMove) {
-    output += chalk.gray(`\n  Last move: ${lastMove}\n`);
+    output += `\nLast move: ${lastMove}\n`;
   }
 
   return output;
