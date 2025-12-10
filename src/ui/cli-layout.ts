@@ -58,7 +58,7 @@ export function initializeScreen(): void {
     style: {
       fg: 'white',
       border: {
-        fg: 'yellow'
+        fg: 'cyan'
       }
     },
     label: ' Status ',
@@ -91,7 +91,7 @@ export function initializeScreen(): void {
       },
       focus: {
         border: {
-          fg: 'yellow'
+          fg: 'white'
         }
       }
     },
@@ -121,11 +121,11 @@ export function initializeScreen(): void {
       fg: 'white',
       bg: 'blue',
       border: {
-        fg: 'green'
+        fg: 'magenta'
       },
       focus: {
         border: {
-          fg: 'yellow'
+          fg: 'white'
         }
       }
     },
