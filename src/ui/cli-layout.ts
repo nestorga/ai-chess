@@ -101,62 +101,23 @@ export function initializeScreen(): void {
   screen.append(memoryBox);
   screen.append(statusBox);
 
-  // Enable Tab on memory box to cycle focus
-  memoryBox.key(['tab'], () => {
-    screen.focusNext();
-    screen.render();
+  // Enable Tab on memory box to cycle back to input (if it exists)
+  memoryBox.key(['tab', 'S-tab'], () => {
+    // Look for input box in children and focus it
+    const children = screen.children;
+    for (const child of children) {
+      if (child.options.label === ' Enter Move ') {
+        child.focus();
+        screen.render();
+        return false;
+      }
+    }
+    // If no input box found, do nothing
     return false;
-  });
-
-  memoryBox.key(['S-tab'], () => {
-    screen.focusPrevious();
-    screen.render();
-    return false;
-  });
-
-  // Global quit handler with proper focus management
-  screen.key(['q', 'C-c'], () => {
-    // Show confirmation dialog
-    const confirmBox = blessed.box({
-      top: 'center',
-      left: 'center',
-      width: 50,
-      height: 7,
-      content: '{center}{bold}Quit game?{/bold}{/center}\n\n{center}Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue{/center}',
-      tags: true,
-      border: {
-        type: 'line'
-      },
-      style: {
-        fg: 'white',
-        bg: 'red',
-        border: {
-          fg: 'red'
-        }
-      },
-      label: ' Confirm Quit ',
-      keys: true,
-      vi: true
-    });
-
-    screen.append(confirmBox);
-    confirmBox.focus();
-    screen.render();
-
-    // Handle keys on the confirm box
-    confirmBox.key(['y', 'Y'], () => {
-      cleanupScreen();
-      process.exit(0);
-    });
-
-    confirmBox.key(['n', 'N', 'escape'], () => {
-      confirmBox.detach();
-      screen.render();
-    });
   });
 
   // Display help text in status bar
-  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
+  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
 
   screen.render();
 }
@@ -196,7 +157,7 @@ ${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White'
   }
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -253,7 +214,7 @@ ${blackFormatted}
   memoryBox!.setScrollPerc(0);
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -315,11 +276,15 @@ export function displayMessage(message: string): void {
     initializeScreen();
   }
 
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
   statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n\n  ${helpText}`);
   screen!.render();
 }
 
 export function getScreen(): blessed.Widgets.Screen | null {
   return screen;
+}
+
+export function getMemoryBox(): blessed.Widgets.ScrollableBoxElement | null {
+  return memoryBox;
 }

@@ -3,7 +3,7 @@ import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, displayMessage } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getMemoryBox, displayMessage } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult } from '../types/chess-types.js';
 
@@ -60,22 +60,13 @@ async function promptForMove(validMoves: string[]): Promise<string> {
 
     screen.append(inputBox);
 
-    // Disable ESC key on input box (let global handler manage it)
-    inputBox.key(['escape'], () => {
-      // Do nothing - global handler will show quit dialog
-      return false;
-    });
-
-    // Enable Tab key to switch focus away from input box
-    inputBox.key(['tab'], () => {
-      screen.focusNext();
-      screen.render();
-      return false;
-    });
-
-    inputBox.key(['S-tab'], () => {
-      screen.focusPrevious();
-      screen.render();
+    // Enable Tab key to explicitly focus memory box
+    inputBox.key(['tab', 'S-tab'], () => {
+      const memory = getMemoryBox();
+      if (memory) {
+        memory.focus();
+        screen.render();
+      }
       return false;
     });
 
