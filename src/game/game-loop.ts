@@ -46,8 +46,8 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     for (let i = 0; i < validMoves.length; i += movesPerLine) {
       movesLines.push('  ' + validMoves.slice(i, i + movesPerLine).join(', '));
     }
-    const movesText = `  Valid moves:\n${movesLines.join('\n')}`;
-    displayMessage(`Your move?\n${movesText}`);
+    const movesText = `Valid moves:\n${movesLines.join('\n')}`;
+    displayMessage(movesText);
     inputBox.focus();
     screen.render();
 
