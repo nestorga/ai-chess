@@ -4,6 +4,8 @@ export type GamePhase = 'opening' | 'middlegame' | 'endgame';
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type PlayingStyle = 'aggressive' | 'defensive' | 'positional' | 'tactical' | 'balanced';
 
+export type { ModelName } from './model-types.js';
+
 export interface GameResult {
   winner: Color | 'draw';
   reason: 'checkmate' | 'stalemate' | 'resignation' | 'draw-agreement' | 'insufficient-material' | 'threefold-repetition' | 'fifty-move-rule';

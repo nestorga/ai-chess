@@ -10,6 +10,8 @@ import { analyzePosition } from '../tools/analyze-position.js';
 import { getBoardState } from '../tools/get-board-state.js';
 import { getGameHistory } from '../tools/get-game-history.js';
 import { chessWorkingMemoryTemplate } from '../memory/working-memory-template.js';
+import type { ModelName } from '../../types/model-types.js';
+import { getModelId } from '../../types/model-types.js';
 
 function createChessMemory(agentName: string): Memory {
   return new Memory({
@@ -35,8 +37,10 @@ function createChessMemory(agentName: string): Memory {
   });
 }
 
-export function createChessAgent(agentName: string): { agent: Agent; memory: Memory } {
+export function createChessAgent(agentName: string, modelName: ModelName = 'haiku'): { agent: Agent; memory: Memory } {
   const memory = createChessMemory(agentName);
+  const modelId = getModelId(modelName);
+
   const agent = new Agent({
     name: agentName,
     instructions: `# ROLE DEFINITION
@@ -129,7 +133,7 @@ When it's your turn:
 6. Briefly explain your strategic thinking
 
 Play strong chess and may the best player win!`,
-    model: anthropic('claude-haiku-4-5-20251001'),
+    model: anthropic(modelId),
     tools: {
       getValidMoves,
       makeMove,

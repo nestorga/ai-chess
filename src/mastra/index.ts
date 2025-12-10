@@ -5,7 +5,7 @@ import { createChessAgent } from './agents/chess-agent.js';
 
 export const mastra = new Mastra({
   agents: {
-    chessAgent: createChessAgent('ChessAgent').agent
+    chessAgent: createChessAgent('ChessAgent', 'haiku').agent
   },
   storage: new LibSQLStore({
     url: 'file:../chess-memory.db'

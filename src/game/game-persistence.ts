@@ -22,7 +22,8 @@ export async function saveGame(
   result: GameResult,
   whitePlayer: string,
   blackPlayer: string,
-  mode: string
+  mode: string,
+  modelInfo?: string
 ): Promise<string> {
   await ensureGamesDirectory();
 
@@ -37,7 +38,10 @@ export async function saveGame(
   gameEngine.setPGNHeader('White', whitePlayer);
   gameEngine.setPGNHeader('Black', blackPlayer);
   gameEngine.setPGNHeader('Mode', mode);
-  gameEngine.setPGNHeader('Model', 'claude-haiku-4-5-20251001');
+
+  if (modelInfo) {
+    gameEngine.setPGNHeader('Model', modelInfo);
+  }
 
   let resultString = '1/2-1/2';
   if (result.winner === 'white') resultString = '1-0';

@@ -4,7 +4,8 @@ import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
 import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
-import type { Color, GameResult } from '../types/chess-types.js';
+import type { Color, GameResult, ModelName } from '../types/chess-types.js';
+import { getModelId } from '../types/model-types.js';
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -108,18 +109,21 @@ async function promptForMove(validMoves: string[]): Promise<string> {
   });
 }
 
-export async function humanVsAIGame(playerColor: Color): Promise<void> {
+export async function humanVsAIGame(playerColor: Color, modelName: ModelName = 'haiku'): Promise<void> {
   initializeScreen();
 
   const game = new GameEngine();
   gameState.setGame(game);
 
   const aiColor = playerColor === 'white' ? 'black' : 'white';
-  const { agent: aiAgent, memory: aiMemory } = createChessAgent(`AI-${aiColor.charAt(0).toUpperCase() + aiColor.slice(1)}`);
+  const { agent: aiAgent, memory: aiMemory } = createChessAgent(
+    `AI-${aiColor.charAt(0).toUpperCase() + aiColor.slice(1)}`,
+    modelName
+  );
 
-  logInfo(`Starting Human vs AI game - Player: ${playerColor}, AI: ${aiColor}`);
+  logInfo(`Starting Human vs AI game - Player: ${playerColor}, AI: ${aiColor}, Model: ${modelName}`);
 
-  displayMessage(`🎮 Starting Human vs AI game! You: ${playerColor.toUpperCase()}, AI: ${aiColor.toUpperCase()}`);
+  displayMessage(`🎮 Starting Human vs AI game! You: ${playerColor.toUpperCase()}, AI: ${aiColor.toUpperCase()} (${modelName.toUpperCase()})`);
   await sleep(2000);
 
   // Persist AI working memory across turns
@@ -218,7 +222,8 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
   const whitePlayer = playerColor === 'white' ? 'Human' : `AI-${aiColor}`;
   const blackPlayer = playerColor === 'black' ? 'Human' : `AI-${aiColor}`;
 
-  const savedPath = await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI');
+  const modelInfo = getModelId(modelName);
+  const savedPath = await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI', modelInfo);
 
   // Wait for user to press a key before cleaning up
   await new Promise<void>(resolve => {
@@ -238,7 +243,7 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
   gameState.clearGame();
 }
 
-export async function aiVsAIGame(): Promise<void> {
+export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: ModelName = 'haiku'): Promise<void> {
   initializeScreen();
 
   // Focus memory box for scrolling (since there's no input box in AI vs AI)
@@ -248,12 +253,12 @@ export async function aiVsAIGame(): Promise<void> {
   const game = new GameEngine();
   gameState.setGame(game);
 
-  const { agent: whiteAgent, memory: whiteMemory } = createChessAgent('White-AI');
-  const { agent: blackAgent, memory: blackMemory } = createChessAgent('Black-AI');
+  const { agent: whiteAgent, memory: whiteMemory } = createChessAgent('White-AI', whiteModel);
+  const { agent: blackAgent, memory: blackMemory } = createChessAgent('Black-AI', blackModel);
 
-  logInfo('Starting AI vs AI game');
+  logInfo(`Starting AI vs AI game - White: ${whiteModel}, Black: ${blackModel}`);
 
-  displayMessage('🤖 Starting AI vs AI game! Watch two AI agents battle!');
+  displayMessage(`🤖 Starting AI vs AI game! White (${whiteModel.toUpperCase()}) vs Black (${blackModel.toUpperCase()})`);
   await sleep(2000);
 
   // Retrieve both working memories for display
@@ -349,7 +354,8 @@ export async function aiVsAIGame(): Promise<void> {
     pgn: game.getPGN()
   };
 
-  const savedPath = await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI');
+  const modelInfo = `White: ${getModelId(whiteModel)}, Black: ${getModelId(blackModel)}`;
+  const savedPath = await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI', modelInfo);
 
   // Wait for user to press a key before cleaning up
   await new Promise<void>(resolve => {
