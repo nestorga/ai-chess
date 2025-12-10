@@ -35,7 +35,8 @@ export function initializeScreen(): void {
         fg: 'cyan'
       }
     },
-    label: ' Chess Board '
+    label: ' Chess Board ',
+    focusable: false
   });
 
   // Working memory display (right side - 60%)
@@ -92,23 +93,25 @@ export function initializeScreen(): void {
         fg: 'yellow'
       }
     },
-    label: ' Status '
+    label: ' Status ',
+    focusable: false
   });
 
   screen.append(boardBox);
   screen.append(memoryBox);
   screen.append(statusBox);
 
-  // Enable TAB to cycle focus between elements
-  screen.key(['tab'], () => {
+  // Enable Tab on memory box to cycle focus
+  memoryBox.key(['tab'], () => {
     screen.focusNext();
     screen.render();
+    return false;
   });
 
-  // Enable S-TAB (Shift-Tab) to cycle backwards
-  screen.key(['S-tab'], () => {
+  memoryBox.key(['S-tab'], () => {
     screen.focusPrevious();
     screen.render();
+    return false;
   });
 
   // Global quit handler with proper focus management
