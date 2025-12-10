@@ -34,12 +34,15 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     // Show input box and clear buffer
     let inputBuffer = '';
     inputBox.show();
-    setInputContent('');  // Clear display
+    setInputContent('');  // Clear with prefix (will show "> ")
 
-    // Display prompt with valid moves
-    const movesText = validMoves.length <= 20
-      ? `Valid moves: ${validMoves.join(', ')}`
-      : `${validMoves.length} valid moves available`;
+    // Display prompt with all valid moves (add line breaks every 16 moves for readability)
+    const movesPerLine = 16;
+    const movesLines: string[] = [];
+    for (let i = 0; i < validMoves.length; i += movesPerLine) {
+      movesLines.push('  ' + validMoves.slice(i, i + movesPerLine).join(', '));
+    }
+    const movesText = `  Valid moves:\n${movesLines.join('\n')}`;
     displayMessage(`Your move?\n\n${movesText}`);
     inputBox.focus();
     screen.render();
@@ -82,7 +85,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
           // Invalid move - redisplay prompt with valid moves
           displayMessage(`Invalid move: "${move}". Try again.\n\n${movesText}`);
           inputBuffer = '';
-          setInputContent('');
+          setInputContent('');  // Clear (prefix ensures visibility)
           inputBox.focus();  // Refocus input box after invalid move
           screen.render();
         }

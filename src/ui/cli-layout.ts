@@ -24,7 +24,7 @@ export function initializeScreen(): void {
     top: 0,
     left: 0,
     width: '40%',
-    height: '80%',
+    height: '75%',
     content: '',
     tags: true,
     border: {
@@ -45,7 +45,7 @@ export function initializeScreen(): void {
     top: 0,
     left: '40%',
     width: '60%',
-    height: '80%',
+    height: '75%',
     content: '',
     tags: true,
     border: {
@@ -77,12 +77,12 @@ export function initializeScreen(): void {
     focusable: true
   });
 
-  // Status bar (bottom - 20% for better visibility)
+  // Status bar (bottom - 25% for better visibility)
   statusBox = blessed.box({
-    top: '80%',
+    top: '75%',
     left: 0,
     width: '100%',
-    height: '20%',
+    height: '25%',
     content: '',
     tags: true,
     border: {
@@ -287,15 +287,30 @@ export function cleanupScreen(): void {
   }
 }
 
+function stripBlessedTags(text: string): string {
+  return text.replace(/\{[^}]*\}/g, '');
+}
+
 export function displayMessage(message: string): void {
   if (!screen || !statusBox) {
     initializeScreen();
   }
 
   const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
-  // Pad the message with spaces to ensure full width coverage and avoid character retention
-  const paddedMessage = `\n  {bold}{white-fg}${message}${' '.repeat(100)}{/white-fg}{/bold}\n\n  ${helpText}`;
-  statusBox!.setContent(paddedMessage);
+
+  // Root cause: blessed doesn't clear characters beyond new content length
+  // Solution: Pad based on DISPLAY length (after stripping tags) to 200 chars
+  const paddedMessage = message.split('\n').map(line => {
+    const displayLen = stripBlessedTags(line).length;
+    return line + ' '.repeat(Math.max(0, 200 - displayLen));
+  }).join('\n');
+
+  const paddedHelp = helpText.split('\n').map(line => {
+    const displayLen = stripBlessedTags(line).length;
+    return line + ' '.repeat(Math.max(0, 200 - displayLen));
+  }).join('\n');
+
+  statusBox!.setContent(`\n  {bold}{white-fg}${paddedMessage}{/white-fg}{/bold}\n\n  ${paddedHelp}`);
   screen!.render();
 }
 
@@ -313,6 +328,9 @@ export function getInputBox(): blessed.Widgets.BoxElement | null {
 
 export function setInputContent(text: string): void {
   if (inputBox) {
-    inputBox.setContent(text);
+    // Root cause: blessed doesn't recognize updates from '' to 'x' as dirty
+    // Solution: Always use a visible prefix so every update is different
+    const displayText = '> ' + text;
+    inputBox.setContent(displayText);
   }
 }
