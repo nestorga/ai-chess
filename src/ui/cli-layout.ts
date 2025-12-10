@@ -8,8 +8,7 @@ let screen: blessed.Widgets.Screen | null = null;
 let boardBox: blessed.Widgets.BoxElement | null = null;
 let memoryBox: blessed.Widgets.ScrollableBoxElement | null = null;
 let statusBox: blessed.Widgets.BoxElement | null = null;
-let form: blessed.Widgets.FormElement | null = null;
-let inputBox: blessed.Widgets.TextboxElement | null = null;
+let inputBox: blessed.Widgets.BoxElement | null = null;
 
 export function initializeScreen(): void {
   if (screen) return;
@@ -103,29 +102,13 @@ export function initializeScreen(): void {
   screen.append(memoryBox);
   screen.append(statusBox);
 
-  // Create form for Tab navigation between input and memory
-  form = blessed.form({
+  // Create simple input display box (NOT textbox or form)
+  inputBox = blessed.box({
     parent: screen,
     bottom: 3,
     left: 2,
     width: '50%',
     height: 3,
-    keys: true,
-    vi: true,
-    hidden: true,  // Initially hidden, shown when prompting for move
-    style: {
-      fg: 'white',
-      bg: 'blue'
-    }
-  });
-
-  // Create input box as child of form
-  inputBox = blessed.textbox({
-    parent: form,
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
     border: {
       type: 'line'
     },
@@ -142,8 +125,9 @@ export function initializeScreen(): void {
       }
     },
     label: ' Enter Move ',
-    keys: true,
-    inputOnFocus: false,  // Don't auto-activate - we'll call readInput() manually
+    content: '',  // We'll update this manually
+    tags: false,  // No tag processing needed
+    hidden: true,  // Initially hidden, shown when prompting for move
     focusable: true
   });
 
@@ -299,7 +283,6 @@ export function cleanupScreen(): void {
     boardBox = null;
     memoryBox = null;
     statusBox = null;
-    form = null;
     inputBox = null;
   }
 }
@@ -322,10 +305,12 @@ export function getMemoryBox(): blessed.Widgets.ScrollableBoxElement | null {
   return memoryBox;
 }
 
-export function getForm(): blessed.Widgets.FormElement | null {
-  return form;
+export function getInputBox(): blessed.Widgets.BoxElement | null {
+  return inputBox;
 }
 
-export function getInputBox(): blessed.Widgets.TextboxElement | null {
-  return inputBox;
+export function setInputContent(text: string): void {
+  if (inputBox) {
+    inputBox.setContent(text);
+  }
 }

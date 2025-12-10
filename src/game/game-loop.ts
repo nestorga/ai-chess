@@ -2,7 +2,7 @@ import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getForm, getInputBox, displayMessage } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult } from '../types/chess-types.js';
 
@@ -23,60 +23,98 @@ function extractMoveFromResponse(response: string): string | null {
 
 async function promptForMove(validMoves: string[]): Promise<string> {
   return new Promise((resolve) => {
-    const form = getForm();
-    const inputBox = getInputBox();
     const screen = getScreen();
+    const inputBox = getInputBox();
+    const memoryBox = getMemoryBox();
 
-    if (!form || !inputBox || !screen) {
+    if (!screen || !inputBox || !memoryBox) {
       throw new Error('UI not initialized');
     }
 
-    // Show form and clear previous value
-    form.show();
-    inputBox.clearValue();
+    // Show input box and clear buffer
+    let inputBuffer = '';
+    inputBox.show();
+    setInputContent('');  // Clear display
 
     displayMessage('Your move? (or "moves" to see valid moves)');
+    inputBox.focus();
+    screen.render();
 
-    // Handle submit event
-    const submitHandler = () => {
-      const move = inputBox.value.trim();
+    // Handle keypresses at screen level
+    const keypressHandler = (ch: string, key: any) => {
+      // Ctrl+C: Quit immediately
+      if (key.name === 'c' && key.ctrl) {
+        cleanup();
+        process.exit(0);
+      }
 
-      if (move.toLowerCase() === 'moves') {
-        displayMessage(`Valid moves: ${validMoves.join(', ')}`);
-        inputBox.clearValue();
-        // Stay in input mode, re-prompt
-        inputBox.readInput(() => {
-          form.submit();
-        });
+      // Tab: Switch focus between input and memory
+      if (key.name === 'tab' && !key.shift) {
+        if (screen.focused === inputBox) {
+          memoryBox.focus();
+        } else {
+          inputBox.focus();
+        }
+        screen.render();
         return;
       }
 
-      if (validMoves.includes(move)) {
-        // Valid move - hide form and resolve
-        form.hide();
-        form.removeListener('submit', submitHandler);
+      // Only process other keys when input box is focused
+      if (screen.focused !== inputBox) {
+        return;
+      }
+
+      // Enter: Submit
+      if (key.name === 'enter') {
+        const move = inputBuffer.trim();
+
+        if (move.toLowerCase() === 'moves') {
+          displayMessage(`Valid moves: ${validMoves.join(', ')}`);
+          inputBuffer = '';
+          setInputContent('');
+          screen.render();
+          return;
+        }
+
+        if (validMoves.includes(move)) {
+          // Valid move
+          cleanup();
+          inputBox.hide();
+          screen.render();
+          resolve(move);
+        } else {
+          // Invalid move
+          displayMessage(`Invalid move: "${move}". Try again.`);
+          inputBuffer = '';
+          setInputContent('');
+          screen.render();
+        }
+        return;
+      }
+
+      // Backspace: Remove last character
+      if (key.name === 'backspace') {
+        inputBuffer = inputBuffer.slice(0, -1);
+        setInputContent(inputBuffer);
         screen.render();
-        resolve(move);
-      } else {
-        displayMessage(`Invalid move: "${move}". Try again.`);
-        inputBox.clearValue();
-        // Stay in input mode, re-prompt
-        inputBox.readInput(() => {
-          form.submit();
-        });
+        return;
+      }
+
+      // Regular character: Add to buffer
+      if (ch && ch.length === 1 && !key.ctrl && !key.meta) {
+        inputBuffer += ch;
+        setInputContent(inputBuffer);
+        screen.render();
       }
     };
 
-    form.on('submit', submitHandler);
+    // Cleanup function
+    const cleanup = () => {
+      screen.removeListener('keypress', keypressHandler);
+    };
 
-    // Manually start input mode
-    inputBox.readInput(() => {
-      // This callback fires when input completes (Enter or Escape)
-      form.submit();
-    });
-
-    inputBox.focus();
-    screen.render();
+    // Attach handler
+    screen.on('keypress', keypressHandler);
   });
 }
 
