@@ -1,5 +1,5 @@
 import { Chess } from 'chess.js';
-import type { GamePhase, PositionAnalysis, Color } from '../types/chess-types.js';
+import type { GamePhase, PositionAnalysis, Color, MaterialCount, CastlingRights, MoveType } from '../types/chess-types.js';
 
 const PIECE_VALUES: Record<string, number> = {
   p: 1, n: 3, b: 3, r: 5, q: 9, k: 0,
@@ -280,5 +280,61 @@ export class GameEngine {
   reset(): void {
     this.chess.reset();
     this.gameId = this.generateGameId();
+  }
+
+  getMaterialCount(): MaterialCount {
+    const board = this.chess.board();
+
+    const white = { pawns: 0, knights: 0, bishops: 0, rooks: 0, queens: 0, total: 0 };
+    const black = { pawns: 0, knights: 0, bishops: 0, rooks: 0, queens: 0, total: 0 };
+
+    board.forEach(row => {
+      row.forEach(square => {
+        if (square) {
+          const piece = square.type;
+          const isWhite = square.color === 'w';
+          const target = isWhite ? white : black;
+          const pieceValue = PIECE_VALUES[piece];
+
+          switch (piece) {
+            case 'p': target.pawns++; break;
+            case 'n': target.knights++; break;
+            case 'b': target.bishops++; break;
+            case 'r': target.rooks++; break;
+            case 'q': target.queens++; break;
+          }
+
+          target.total += pieceValue;
+        }
+      });
+    });
+
+    return { white, black };
+  }
+
+  getCastlingRights(): CastlingRights {
+    const fen = this.chess.fen();
+    const castlingPart = fen.split(' ')[2];
+
+    return {
+      whiteKingside: castlingPart.includes('K'),
+      whiteQueenside: castlingPart.includes('Q'),
+      blackKingside: castlingPart.includes('k'),
+      blackQueenside: castlingPart.includes('q')
+    };
+  }
+
+  getEnPassantSquare(): string | null {
+    const fen = this.chess.fen();
+    const enPassantPart = fen.split(' ')[3];
+    return enPassantPart === '-' ? null : enPassantPart;
+  }
+
+  categorizeMove(move: string, wasCheck: boolean, wasCheckmate: boolean, wasCaptured: boolean): MoveType {
+    if (wasCheckmate) return 'checkmate';
+    if (move === 'O-O' || move === 'O-O-O') return 'castling';
+    if (wasCaptured) return 'capture';
+    if (wasCheck) return 'check';
+    return 'quiet';
   }
 }

@@ -22,6 +22,30 @@ function extractMoveFromResponse(response: string): string | null {
   return null;
 }
 
+function getToolCallMessage(toolName: string): string {
+  // Map both hyphenated IDs and camelCase names
+  const toolMessages: Record<string, string> = {
+    'get-board-state': 'Checking board position',
+    'getBoardState': 'Checking board position',
+    'get-valid-moves': 'Calculating valid moves',
+    'getValidMoves': 'Calculating valid moves',
+    'analyze-position': 'Analyzing position',
+    'analyzePosition': 'Analyzing position',
+    'make-move': 'Making move',
+    'makeMove': 'Making move',
+    'get-game-history': 'Reviewing game history',
+    'getGameHistory': 'Reviewing game history'
+  };
+
+  const message = toolMessages[toolName];
+  if (message) {
+    return message;
+  }
+
+  // Fallback for unknown tools
+  return `Using ${toolName}`;
+}
+
 async function promptForMove(validMoves: string[]): Promise<string> {
   return new Promise((resolve) => {
     const screen = getScreen();
@@ -156,7 +180,15 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
           `It's your turn to move. You are playing as ${aiColor}. Analyze the position and make your move.`,
           {
             resourceId: game.getGameId(),
-            threadId: `game-${game.getGameId()}`
+            threadId: `game-${game.getGameId()}`,
+            onStepFinish: ({ toolCalls }) => {
+              if (toolCalls && toolCalls.length > 0) {
+                for (const toolCall of toolCalls) {
+                  const toolMessage = getToolCallMessage(toolCall.payload.toolName);
+                  displayMessage(`AI: ${toolMessage}`);
+                }
+              }
+            }
           }
         );
 
@@ -274,7 +306,15 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
         `It's your turn to move. You are playing as ${currentColor}. Analyze the position and make your move.`,
         {
           resourceId: game.getGameId(),
-          threadId: `${currentColor}-${game.getGameId()}`
+          threadId: `${currentColor}-${game.getGameId()}`,
+          onStepFinish: ({ toolCalls }) => {
+            if (toolCalls && toolCalls.length > 0) {
+              for (const toolCall of toolCalls) {
+                const toolMessage = getToolCallMessage(toolCall.payload.toolName);
+                displayMessage(`${currentColor.toUpperCase()}: ${toolMessage}`);
+              }
+            }
+          }
         }
       );
 

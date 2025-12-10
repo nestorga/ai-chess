@@ -16,7 +16,8 @@ export const makeMove = createTool({
     isCheckmate: z.boolean().describe('Whether the move resulted in checkmate'),
     isStalemate: z.boolean().describe('Whether the move resulted in stalemate'),
     isDraw: z.boolean().describe('Whether the game is now a draw'),
-    error: z.string().optional().describe('Error message if the move failed')
+    error: z.string().optional().describe('Error message if the move failed'),
+    moveType: z.enum(['capture', 'check', 'castling', 'quiet', 'checkmate']).optional().describe('Type of move that was made')
   }),
   execute: async ({ context }) => {
     const { move } = context;
@@ -36,14 +37,20 @@ export const makeMove = createTool({
       };
     }
 
+    // Determine move type
+    const isCheck = game.isCheck();
+    const isCheckmate = game.isCheckmate();
+    const moveType = game.categorizeMove(move, isCheck, isCheckmate, !!result.captured);
+
     return {
       success: true,
       fen: game.getFEN(),
       capturedPiece: result.captured,
-      isCheck: game.isCheck(),
-      isCheckmate: game.isCheckmate(),
+      isCheck,
+      isCheckmate,
       isStalemate: game.isStalemate(),
-      isDraw: game.isDraw()
+      isDraw: game.isDraw(),
+      moveType
     };
   }
 });

@@ -28,7 +28,12 @@ export interface BoardState {
   moveNumber: number;
   ascii: string;
   lastMove?: string;
+  material: MaterialCount;
+  castlingRights: CastlingRights;
+  enPassantSquare: string | null;
 }
+
+export type MoveType = 'capture' | 'check' | 'castling' | 'quiet' | 'checkmate';
 
 export interface MoveResult {
   success: boolean;
@@ -39,10 +44,41 @@ export interface MoveResult {
   isStalemate: boolean;
   isDraw: boolean;
   error?: string;
+  moveType?: MoveType;
+}
+
+export interface MovesByType {
+  captures: string[];
+  checks: string[];
+  castling: string[];
+  developing: string[];
+  quiet: string[];
 }
 
 export interface ValidMoves {
   moves: string[];
   count: number;
   inCheck: boolean;
+  movesByType: MovesByType;
+}
+
+export interface PieceCount {
+  pawns: number;
+  knights: number;
+  bishops: number;
+  rooks: number;
+  queens: number;
+  total: number;
+}
+
+export interface MaterialCount {
+  white: PieceCount;
+  black: PieceCount;
+}
+
+export interface CastlingRights {
+  whiteKingside: boolean;
+  whiteQueenside: boolean;
+  blackKingside: boolean;
+  blackQueenside: boolean;
 }

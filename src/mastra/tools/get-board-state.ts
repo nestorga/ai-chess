@@ -11,7 +11,32 @@ export const getBoardState = createTool({
     turn: z.enum(['w', 'b']).describe('Whose turn it is (w=white, b=black)'),
     moveNumber: z.number().describe('Current move number'),
     ascii: z.string().describe('ASCII representation of the board'),
-    lastMove: z.string().optional().describe('The last move played in SAN notation')
+    lastMove: z.string().optional().describe('The last move played in SAN notation'),
+    material: z.object({
+      white: z.object({
+        pawns: z.number(),
+        knights: z.number(),
+        bishops: z.number(),
+        rooks: z.number(),
+        queens: z.number(),
+        total: z.number()
+      }),
+      black: z.object({
+        pawns: z.number(),
+        knights: z.number(),
+        bishops: z.number(),
+        rooks: z.number(),
+        queens: z.number(),
+        total: z.number()
+      })
+    }).describe('Material count and total value for each side'),
+    castlingRights: z.object({
+      whiteKingside: z.boolean(),
+      whiteQueenside: z.boolean(),
+      blackKingside: z.boolean(),
+      blackQueenside: z.boolean()
+    }).describe('Available castling rights for each side'),
+    enPassantSquare: z.string().nullable().describe('En passant target square if available')
   }),
   execute: async () => {
     const game = gameState.getGame();
@@ -21,7 +46,10 @@ export const getBoardState = createTool({
       turn: game.getTurn() === 'white' ? 'w' as const : 'b' as const,
       moveNumber: game.getMoveNumber(),
       ascii: game.getASCII(),
-      lastMove: game.getLastMove()
+      lastMove: game.getLastMove(),
+      material: game.getMaterialCount(),
+      castlingRights: game.getCastlingRights(),
+      enPassantSquare: game.getEnPassantSquare()
     };
   }
 });
