@@ -137,7 +137,7 @@ export function initializeScreen(): void {
   });
 
   // Display help text in status bar
-  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
+  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
 
   // Attach global keypress handler
   setupGlobalKeyHandler();
@@ -180,7 +180,7 @@ ${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White'
   }
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -237,7 +237,7 @@ ${blackFormatted}
   memoryBox!.setScrollPerc(0);
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -304,8 +304,8 @@ function setupGlobalKeyHandler(): void {
   if (!screen) return;
 
   globalKeyHandler = async (ch: string, key: any) => {
-    // Ctrl+C, Q, ESC: Always show quit confirmation
-    if ((key.name === 'c' && key.ctrl) || key.name === 'q' || key.name === 'escape') {
+    // Ctrl+C, ESC: Always show quit confirmation
+    if ((key.name === 'c' && key.ctrl) || key.name === 'escape') {
       const shouldQuit = await confirmQuit();
       if (shouldQuit) {
         cleanupScreen();
@@ -372,7 +372,7 @@ export function displayMessage(message: string): void {
     initializeScreen();
   }
 
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
 
   statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n\n  ${helpText}`);
   screen!.render();
