@@ -270,14 +270,15 @@ ${winner === 'draw'
 {gray-fg}Total moves: ${game.getMoveNumber()}{/gray-fg}{/center}`;
 
   boardBox!.setContent(gameOverContent);
-  statusBox!.setContent('\n  {yellow-fg}Press any key to continue...{/yellow-fg}');
+
+  // Show appropriate help text based on mode
+  const helpText = isDualAgentMode
+    ? `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Ctrl+C{/cyan-fg} - Quit\n  {cyan-fg}Tab{/cyan-fg} - Switch agent view\n  {cyan-fg}↑↓{/cyan-fg} - Scroll memory`
+    : `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Ctrl+C{/cyan-fg} - Quit\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus\n  {cyan-fg}↑↓{/cyan-fg} - Scroll memory`;
+
+  statusBox!.setContent(`\n  {bold}{green-fg}Game complete!{/green-fg}{/bold}\n\n  ${helpText}`);
 
   screen!.render();
-
-  // Wait for keypress before continuing
-  screen!.onceKey(['enter', 'space', 'escape'], () => {
-    // Don't clean up screen here, let the calling code handle it
-  });
 }
 
 export function cleanupScreen(): void {

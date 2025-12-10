@@ -2,7 +2,7 @@ import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive, setDualAgentMode, updateDualAgentMemories } from '../ui/cli-layout.js';
+import { displayGameState, displayGameOver, initializeScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive, setDualAgentMode, updateDualAgentMemories } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult, ModelName } from '../types/chess-types.js';
 import { getModelId } from '../types/model-types.js';
@@ -223,24 +223,14 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
   const blackPlayer = playerColor === 'black' ? 'Human' : `AI-${aiColor}`;
 
   const modelInfo = getModelId(modelName);
-  const savedPath = await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI', modelInfo);
+  await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI', modelInfo);
 
-  // Wait for user to press a key before cleaning up
-  await new Promise<void>(resolve => {
-    const screen = getScreen();
-    if (screen) {
-      const handler = () => resolve();
-      screen.once('keypress', handler);
-    } else {
-      resolve();
-    }
+  // Keep screen active until user quits with Ctrl+C (handled by global handler)
+  // Game state remains visible for review
+  await new Promise<void>(() => {
+    // This promise never resolves - user must press Ctrl+C to quit
+    // The global key handler will call cleanupScreen() and process.exit(0)
   });
-
-  cleanupScreen();
-
-  console.log(`Game saved to: ${savedPath}\n`);
-
-  gameState.clearGame();
 }
 
 export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: ModelName = 'haiku'): Promise<void> {
@@ -356,25 +346,12 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
   };
 
   const modelInfo = `White: ${getModelId(whiteModel)}, Black: ${getModelId(blackModel)}`;
-  const savedPath = await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI', modelInfo);
+  await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI', modelInfo);
 
-  // Wait for user to press a key before cleaning up
-  await new Promise<void>(resolve => {
-    const screen = getScreen();
-    if (screen) {
-      const handler = () => resolve();
-      screen.once('keypress', handler);
-    } else {
-      resolve();
-    }
+  // Keep screen active until user quits with Ctrl+C (handled by global handler)
+  // Tab switching and scrolling remain functional for reviewing the game
+  await new Promise<void>(() => {
+    // This promise never resolves - user must press Ctrl+C to quit
+    // The global key handler will call setDualAgentMode(false), cleanupScreen(), and process.exit(0)
   });
-
-  // Disable dual-agent mode on cleanup
-  setDualAgentMode(false);
-
-  cleanupScreen();
-
-  console.log(`Game saved to: ${savedPath}\n`);
-
-  gameState.clearGame();
 }
