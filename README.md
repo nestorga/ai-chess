@@ -9,7 +9,7 @@ An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic
 - **Two Game Modes**:
   - **Human vs AI**: Play against the AI agent
   - **AI vs AI**: Watch two AI agents battle each other
-- **Beautiful CLI Interface**: Unicode chess pieces and colored board display
+- **Clean CLI Interface**: Unicode chess pieces with terminal-based UI
 - **Position Analysis**: Real-time evaluation of material, center control, king safety, and more
 - **Move Validation**: All moves are validated using the chess.js library
 
@@ -17,6 +17,7 @@ An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic
 
 1. Clone this repository:
    ```bash
+   git clone <repository-url>
    cd ai-chess
    ```
 
@@ -99,9 +100,9 @@ The project is structured into several key layers:
    - Records critical moments and learning insights
 
 5. **UI Layer** ([src/ui/](src/ui/))
-   - Unicode chess board rendering with colored squares
-   - Working memory display showing AI's strategic thinking
-   - Game state visualization
+   - Unicode chess board rendering with box-drawing characters
+   - Scrollable working memory display showing AI's strategic thinking
+   - Three-panel terminal layout with board, status, and memory sections
 
 6. **Game Loop** ([src/game/game-loop.ts](src/game/game-loop.ts))
    - Orchestrates turns between players and AI
@@ -140,7 +141,7 @@ The agent uses its working memory to:
 - **AI Model**: Claude Haiku 4.5 (via Anthropic API)
 - **Framework**: Mastra (for agent orchestration and memory)
 - **Chess Engine**: chess.js (for move validation and rules)
-- **CLI**: Commander.js, Chalk, readline
+- **CLI**: Commander.js, Blessed (TUI), Chalk
 - **Database**: LibSQL (for persistent working memory)
 - **Language**: TypeScript
 
@@ -197,13 +198,17 @@ npm run dev
 
 ### Starting a Game
 
-```bash
-$ npm run play
+When you run `npm run play`, the game launches a full-screen terminal UI with three panels:
 
-🎮 Starting Human vs AI game!
-You are playing as WHITE
-AI is playing as BLACK
+**Left side:**
+- **Top panel**: Chess board with Unicode pieces and coordinates
+- **Bottom panel**: Status messages, command help, and move input
 
+**Right side:**
+- **Memory panel**: Scrollable AI working memory showing strategic thinking
+
+The chess board displays using Unicode pieces:
+```
     a  b  c  d  e  f  g  h
   ┌──┬──┬──┬──┬──┬──┬──┬──┐
 8 │♜ │♞ │♝ │♛ │♚ │♝ │♞ │♜ │ 8
@@ -223,10 +228,13 @@ AI is playing as BLACK
 1 │♖ │♘ │♗ │♕ │♔ │♗ │♘ │♖ │ 1
   └──┴──┴──┴──┴──┴──┴──┴──┘
     a  b  c  d  e  f  g  h
-
-Your move?
-> e4
 ```
+
+**Keyboard controls:**
+- **Enter**: Submit your move (e.g., type `e4` and press Enter)
+- **Tab**: Switch focus between panels (or switch between agents in AI vs AI mode)
+- **↑↓**: Scroll through AI working memory
+- **Ctrl+C**: Quit game (with confirmation)
 
 ## Future Enhancements
 
