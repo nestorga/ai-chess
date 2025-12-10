@@ -11,8 +11,7 @@
     "build": "mastra build",
     "start": "mastra start",
     "play": "tsx --env-file=.env src/index.ts play",
-    "play:ai-vs-ai": "tsx --env-file=.env src/index.ts play --mode ai-ai",
-    "list": "tsx --env-file=.env src/index.ts list"
+    "play:ai-vs-ai": "tsx --env-file=.env src/index.ts play --mode ai-ai"
   },
   "keywords": [
     "chess",

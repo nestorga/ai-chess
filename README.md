@@ -10,7 +10,6 @@ An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic
   - **Human vs AI**: Play against the AI agent
   - **AI vs AI**: Watch two AI agents battle each other
 - **Beautiful CLI Interface**: Unicode chess pieces and colored board display
-- **Game Persistence**: Save and load games in standard PGN format
 - **Position Analysis**: Real-time evaluation of material, center control, king safety, and more
 - **Move Validation**: All moves are validated using the chess.js library
 
@@ -57,20 +56,6 @@ npm run play:ai-vs-ai
 Or use the full command:
 ```bash
 npm run play -- --mode ai-ai
-```
-
-### List Saved Games
-
-View all saved games:
-```bash
-npm run list
-```
-
-### Load a Saved Game
-
-View a previously played game:
-```bash
-npm run play -- load <filename>
 ```
 
 ### Debugging and Error Logs
@@ -122,6 +107,7 @@ The project is structured into several key layers:
    - Orchestrates turns between players and AI
    - Handles both Human vs AI and AI vs AI modes
    - Manages game flow and error handling
+   - Persists AI working memory after each turn
 
 ### The AI's Approach
 
@@ -171,16 +157,18 @@ ai-chess/
 │   ├── game/
 │   │   ├── game-engine.ts   # Chess.js wrapper
 │   │   ├── game-loop.ts     # Game orchestration
-│   │   ├── game-state.ts    # Global game state
-│   │   └── game-persistence.ts  # Save/load games
+│   │   └── game-state.ts    # Global game state
 │   ├── ui/
 │   │   ├── board-renderer.ts    # Chess board display
 │   │   ├── memory-display.ts    # Working memory formatting
 │   │   └── cli-layout.ts        # Terminal UI layout
 │   ├── types/
 │   │   └── chess-types.ts   # TypeScript type definitions
+│   ├── utils/
+│   │   ├── error-logger.ts     # Error logging utilities
+│   │   └── memory-persistence.ts  # Working memory persistence
 │   └── index.ts             # CLI entry point
-├── games/                   # Saved PGN files
+├── memory-logs/             # AI working memory logs
 └── package.json
 ```
 

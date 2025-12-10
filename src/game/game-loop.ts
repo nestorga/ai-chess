@@ -1,11 +1,10 @@
 import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
-import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
 import { displayGameState, displayGameOver, initializeScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive, setDualAgentMode, updateDualAgentMemories } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import { saveWorkingMemory, appendMemorySummary } from '../utils/memory-persistence.js';
-import type { Color, GameResult, ModelName } from '../types/chess-types.js';
+import type { Color, ModelName } from '../types/chess-types.js';
 import { getModelId } from '../types/model-types.js';
 
 function sleep(ms: number): Promise<void> {
@@ -255,20 +254,8 @@ export async function humanVsAIGame(playerColor: Color, modelName: ModelName = '
 
   displayGameOver(game, winner!, reason);
 
-  const result: GameResult = {
-    winner: winner!,
-    reason: reason as any,
-    moveCount: game.getMoveNumber(),
-    pgn: game.getPGN()
-  };
-
-  const whitePlayer = playerColor === 'white' ? 'Human' : `AI-${aiColor}`;
-  const blackPlayer = playerColor === 'black' ? 'Human' : `AI-${aiColor}`;
-
-  const modelInfo = getModelId(modelName);
-  await saveGame(game, result, whitePlayer, blackPlayer, 'Human vs AI', modelInfo);
-
   // Append game summary to AI's memory log
+  const modelInfo = getModelId(modelName);
   const gameSummary = `
 Game Result: ${winner === 'draw' ? 'Draw' : `${winner?.toUpperCase()} wins`}
 Reason: ${reason}
@@ -409,16 +396,6 @@ export async function aiVsAIGame(whiteModel: ModelName = 'haiku', blackModel: Mo
   const reason = game.getGameOverReason();
 
   displayGameOver(game, winner!, reason);
-
-  const result: GameResult = {
-    winner: winner!,
-    reason: reason as any,
-    moveCount: game.getMoveNumber(),
-    pgn: game.getPGN()
-  };
-
-  const modelInfo = `White: ${getModelId(whiteModel)}, Black: ${getModelId(blackModel)}`;
-  await saveGame(game, result, 'White-AI', 'Black-AI', 'AI vs AI', modelInfo);
 
   // Append game summary to both AI agents' memory logs
   const gameSummary = `

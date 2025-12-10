@@ -30,8 +30,5 @@ Thumbs.db
 *.swo
 *~
 
-# Saved games (optional - uncomment if you don't want to track games)
-games/
-
 # Memory logs
 memory-logs/
