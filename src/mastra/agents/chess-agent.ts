@@ -23,15 +23,10 @@ function createChessMemory(agentName: string): Memory {
     }),
     embedder: fastembed,
     options: {
-      lastMessages: 30,
+      lastMessages: 0,
       workingMemory: {
         enabled: true,
         template: chessWorkingMemoryTemplate
-      },
-      semanticRecall: {
-        topK: 5,
-        messageRange: 3,
-        scope: 'resource'
       }
     }
   });
