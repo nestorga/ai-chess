@@ -10,6 +10,10 @@ let memoryBox: blessed.Widgets.ScrollableBoxElement | null = null;
 let statusBox: blessed.Widgets.BoxElement | null = null;
 let inputBox: blessed.Widgets.BoxElement | null = null;
 
+// State management for global keypress handler
+let isInputActive = false;
+let globalKeyHandler: ((ch: string, key: any) => void) | null = null;
+
 export function initializeScreen(): void {
   if (screen) return;
 
@@ -132,7 +136,10 @@ export function initializeScreen(): void {
   });
 
   // Display help text in status bar
-  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
+  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
+
+  // Attach global keypress handler
+  setupGlobalKeyHandler();
 
   screen.render();
 }
@@ -172,7 +179,7 @@ ${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White'
   }
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -229,7 +236,7 @@ ${blackFormatted}
   memoryBox!.setScrollPerc(0);
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory`;
   if (statusMessage) {
     statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
@@ -277,6 +284,11 @@ ${winner === 'draw'
 }
 
 export function cleanupScreen(): void {
+  if (screen && globalKeyHandler) {
+    screen.removeListener('keypress', globalKeyHandler);
+    globalKeyHandler = null;
+  }
+
   if (screen) {
     screen.destroy();
     screen = null;
@@ -285,6 +297,69 @@ export function cleanupScreen(): void {
     statusBox = null;
     inputBox = null;
   }
+}
+
+function setupGlobalKeyHandler(): void {
+  if (!screen) return;
+
+  globalKeyHandler = async (ch: string, key: any) => {
+    // Ctrl+C, Q, ESC: Always show quit confirmation
+    if ((key.name === 'c' && key.ctrl) || key.name === 'q' || key.name === 'escape') {
+      const shouldQuit = await confirmQuit();
+      if (shouldQuit) {
+        cleanupScreen();
+        process.exit(0);
+      }
+      return;
+    }
+
+    // Tab: Focus switching (works anytime)
+    if (key.name === 'tab' && !key.shift) {
+      if (screen!.focused === inputBox && inputBox!.visible) {
+        memoryBox?.focus();
+      } else if (screen!.focused === memoryBox) {
+        if (inputBox?.visible && isInputActive) {
+          inputBox.focus();
+        }
+      }
+      screen!.render();
+      return;
+    }
+  };
+
+  screen.on('keypress', globalKeyHandler);
+}
+
+async function confirmQuit(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!screen || !statusBox) {
+      resolve(true);
+      return;
+    }
+
+    // Save current content
+    const originalContent = statusBox.getContent();
+
+    // Show confirmation prompt
+    statusBox.setContent('\n  {bold}{yellow-fg}Really quit? Press Y to quit, N or ESC to continue{/yellow-fg}{/bold}');
+    screen.render();
+
+    // Wait for Y or N or ESC
+    const confirmHandler = (ch: string, key: any) => {
+      if (key.name === 'y' || ch === 'y' || ch === 'Y') {
+        screen!.removeListener('keypress', confirmHandler);
+        resolve(true);
+      } else if (key.name === 'n' || ch === 'n' || ch === 'N' || key.name === 'escape') {
+        screen!.removeListener('keypress', confirmHandler);
+        statusBox!.setContent(originalContent);
+        screen!.render();
+        resolve(false);
+      }
+      // Ignore all other keys during confirmation
+    };
+
+    screen.on('keypress', confirmHandler);
+  });
 }
 
 function stripBlessedTags(text: string): string {
@@ -296,7 +371,7 @@ export function displayMessage(message: string): void {
     initializeScreen();
   }
 
-  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
 
   // Root cause: blessed doesn't clear characters beyond new content length
   // Solution: Pad based on DISPLAY length (after stripping tags) to 200 chars
@@ -333,4 +408,8 @@ export function setInputContent(text: string): void {
     const displayText = '> ' + text;
     inputBox.setContent(displayText);
   }
+}
+
+export function setInputActive(active: boolean): void {
+  isInputActive = active;
 }

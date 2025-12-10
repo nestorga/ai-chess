@@ -2,7 +2,7 @@ import { GameEngine } from './game-engine.js';
 import { gameState } from './game-state.js';
 import { saveGame } from './game-persistence.js';
 import { createChessAgent } from '../mastra/agents/chess-agent.js';
-import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage } from '../ui/cli-layout.js';
+import { displayGameState, displayDualAgentState, displayGameOver, initializeScreen, cleanupScreen, getScreen, getInputBox, getMemoryBox, setInputContent, displayMessage, setInputActive } from '../ui/cli-layout.js';
 import { logError, logInfo } from '../utils/error-logger.js';
 import type { Color, GameResult } from '../types/chess-types.js';
 
@@ -36,6 +36,9 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     inputBox.show();
     setInputContent('');  // Clear with prefix (will show "> ")
 
+    // Set input active flag for global handler coordination
+    setInputActive(true);
+
     // Display prompt with all valid moves (add line breaks every 16 moves for readability)
     const movesPerLine = 16;
     const movesLines: string[] = [];
@@ -49,22 +52,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
 
     // Handle keypresses at screen level
     const keypressHandler = (ch: string, key: any) => {
-      // Ctrl+C: Quit immediately
-      if (key.name === 'c' && key.ctrl) {
-        cleanup();
-        process.exit(0);
-      }
-
-      // Tab: Switch focus between input and memory
-      if (key.name === 'tab' && !key.shift) {
-        if (screen.focused === inputBox) {
-          memoryBox.focus();
-        } else {
-          inputBox.focus();
-        }
-        screen.render();
-        return;
-      }
+      // Note: Ctrl+C, Q, ESC, and Tab are now handled by global handler
 
       // Only process other keys when input box is focused
       if (screen.focused !== inputBox) {
@@ -79,6 +67,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
           // Valid move
           cleanup();
           inputBox.hide();
+          memoryBox.focus();  // Auto-focus memory for scrolling during AI turn
           screen.render();
           resolve(move);
         } else {
@@ -110,6 +99,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
 
     // Cleanup function
     const cleanup = () => {
+      setInputActive(false);  // Clear input active flag
       screen.removeListener('keypress', keypressHandler);
     };
 
@@ -286,7 +276,7 @@ export async function aiVsAIGame(): Promise<void> {
         `It's your turn to move. You are playing as ${currentColor}. Analyze the position and make your move.`,
         {
           resourceId: game.getGameId(),
-          threadId: `${currentColor}-thread`
+          threadId: `${currentColor}-${game.getGameId()}`
         }
       );
 
@@ -297,7 +287,7 @@ export async function aiVsAIGame(): Promise<void> {
       try {
         const memory = await currentMemory.getWorkingMemory({
           resourceId: game.getGameId(),
-          threadId: `${currentColor}-thread`
+          threadId: `${currentColor}-${game.getGameId()}`
         });
         workingMemory = memory || '';
 
