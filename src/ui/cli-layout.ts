@@ -18,12 +18,12 @@ export function initializeScreen(): void {
     fullUnicode: true
   });
 
-  // Board display (left side - 60%)
+  // Board display (left side - 40%)
   boardBox = blessed.box({
     top: 0,
     left: 0,
-    width: '60%',
-    height: '85%',
+    width: '40%',
+    height: '80%',
     content: '',
     tags: true,
     border: {
@@ -38,12 +38,12 @@ export function initializeScreen(): void {
     label: ' Chess Board '
   });
 
-  // Working memory display (right side - 40%)
+  // Working memory display (right side - 60%)
   memoryBox = blessed.box({
     top: 0,
-    left: '60%',
-    width: '40%',
-    height: '85%',
+    left: '40%',
+    width: '60%',
+    height: '80%',
     content: '',
     tags: true,
     border: {
@@ -63,18 +63,19 @@ export function initializeScreen(): void {
         fg: 'magenta'
       }
     },
-    label: ' AI Working Memory (↑↓ to scroll) ',
+    label: ' AI Working Memory (Tab to focus, ↑↓ to scroll) ',
     keys: true,
     vi: true,
-    mouse: false
+    mouse: false,
+    focusable: true
   });
 
-  // Status bar (bottom - 15%)
+  // Status bar (bottom - 20% for better visibility)
   statusBox = blessed.box({
-    top: '85%',
+    top: '80%',
     left: 0,
     width: '100%',
-    height: '15%',
+    height: '20%',
     content: '',
     tags: true,
     border: {
@@ -93,18 +94,27 @@ export function initializeScreen(): void {
   screen.append(memoryBox);
   screen.append(statusBox);
 
-  // Enable scrolling in memory box with arrow keys
-  memoryBox.focus();
+  // Enable TAB to cycle focus between elements
+  screen.key(['tab'], () => {
+    screen.focusNext();
+    screen.render();
+  });
 
-  // Quit on Escape, q, or Control-C (with confirmation)
-  screen.key(['escape', 'q', 'C-c'], () => {
+  // Enable S-TAB (Shift-Tab) to cycle backwards
+  screen.key(['S-tab'], () => {
+    screen.focusPrevious();
+    screen.render();
+  });
+
+  // Global quit handler with proper focus management
+  screen.key(['q', 'C-c'], () => {
     // Show confirmation dialog
     const confirmBox = blessed.box({
       top: 'center',
       left: 'center',
-      width: 50,
-      height: 7,
-      content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue',
+      width: 60,
+      height: 9,
+      content: '\n  {center}{bold}{white-fg}Quit game?{/white-fg}{/bold}{/center}\n\n  {center}Press {green-fg}{bold}Y{/bold}{/green-fg} to quit, {yellow-fg}{bold}N{/bold}{/yellow-fg} to continue{/center}',
       tags: true,
       border: {
         type: 'line'
@@ -116,29 +126,29 @@ export function initializeScreen(): void {
           fg: 'red'
         }
       },
-      label: ' Confirm Quit '
+      label: ' Confirm Quit ',
+      keys: true,
+      vi: true
     });
 
     screen.append(confirmBox);
     confirmBox.focus();
     screen.render();
 
-    const onKey = (ch: any, key: any) => {
-      if (key.name === 'y') {
-        cleanupScreen();
-        process.exit(0);
-      } else if (key.name === 'n' || key.name === 'escape') {
-        confirmBox.detach();
-        screen.render();
-        screen.removeListener('keypress', onKey);
-      }
-    };
+    // Handle keys on the confirm box
+    confirmBox.key(['y', 'Y'], () => {
+      cleanupScreen();
+      process.exit(0);
+    });
 
-    screen.on('keypress', onKey);
+    confirmBox.key(['n', 'N', 'escape'], () => {
+      confirmBox.detach();
+      screen.render();
+    });
   });
 
   // Display help text in status bar
-  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`);
+  statusBox.setContent(`\n  {yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`);
 
   screen.render();
 }
@@ -178,9 +188,9 @@ ${game.isCheck() ? '{bold}{red-fg}⚠️  CHECK! ' + (turn === 'white' ? 'White'
   }
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
   if (statusMessage) {
-    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n  ${helpText}`);
+    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
     statusBox!.setContent(`\n  ${helpText}`);
   }
@@ -235,9 +245,9 @@ ${blackFormatted}
   memoryBox!.setScrollPerc(0);
 
   // Update status with message and help text
-  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory`;
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit`;
   if (statusMessage) {
-    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n  ${helpText}`);
+    statusBox!.setContent(`\n  {bold}{white-fg}${statusMessage}{/white-fg}{/bold}\n\n  ${helpText}`);
   } else {
     statusBox!.setContent(`\n  ${helpText}`);
   }
@@ -297,8 +307,8 @@ export function displayMessage(message: string): void {
     initializeScreen();
   }
 
-  const helpText = `{yellow-fg}Commands:{/yellow-fg} {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}↑↓{/cyan-fg} - Scroll Memory  |  {cyan-fg}Enter{/cyan-fg} - Submit Move`;
-  statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n  ${helpText}`);
+  const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Q{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
+  statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n\n  ${helpText}`);
   screen!.render();
 }
 

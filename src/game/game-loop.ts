@@ -23,7 +23,7 @@ function extractMoveFromResponse(response: string): string | null {
 }
 
 async function promptForMove(validMoves: string[]): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const screen = getScreen();
     if (!screen) {
       throw new Error('Screen not initialized');
@@ -49,54 +49,12 @@ async function promptForMove(validMoves: string[]): Promise<string> {
       },
       label: ' Enter Move ',
       keys: true,
-      inputOnFocus: true
+      inputOnFocus: true,
+      focusable: true
     });
 
     screen.append(inputBox);
     inputBox.focus();
-
-    // Handle ESC/Q to show quit confirmation dialog
-    inputBox.key(['escape', 'C-c'], () => {
-      // Show quit confirmation
-      const confirmBox = blessed.box({
-        top: 'center',
-        left: 'center',
-        width: 50,
-        height: 7,
-        content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue',
-        tags: true,
-        border: {
-          type: 'line'
-        },
-        style: {
-          fg: 'white',
-          bg: 'red',
-          border: {
-            fg: 'red'
-          }
-        },
-        label: ' Confirm Quit ',
-        keys: true,
-        vi: true
-      });
-
-      screen.append(confirmBox);
-      confirmBox.focus();
-      screen.render();
-
-      // Handle keys on the confirm box itself
-      confirmBox.key(['y', 'Y'], () => {
-        confirmBox.detach();
-        inputBox.detach();
-        reject(new Error('User quit'));
-      });
-
-      confirmBox.key(['n', 'N', 'escape'], () => {
-        confirmBox.detach();
-        inputBox.focus();
-        screen.render();
-      });
-    });
 
     inputBox.on('submit', (value: string) => {
       const move = value.trim();
@@ -149,14 +107,7 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
       displayGameState(game, aiWorkingMemory, 'Your turn! Make your move.');
 
       const validMoves = game.getValidMoves();
-
-      let move: string;
-      try {
-        move = await promptForMove(validMoves);
-      } catch (error) {
-        // User quit during input
-        return;
-      }
+      const move = await promptForMove(validMoves);
 
       const result = game.executeMove(move);
       if (!result.success) {
