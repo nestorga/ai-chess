@@ -107,11 +107,12 @@ export function initializeScreen(): void {
   screen.append(statusBox);
 
   // Create simple input display box (NOT textbox or form)
+  // Positioned within the status box area (left column)
   inputBox = blessed.box({
     parent: screen,
-    bottom: 3,
+    top: '85%',  // Position near bottom of status box area
     left: 2,
-    width: '50%',
+    width: '35%',  // Narrower to fit within left column
     height: 3,
     border: {
       type: 'line'
@@ -373,19 +374,7 @@ export function displayMessage(message: string): void {
 
   const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Q/ESC{/cyan-fg} - Quit  |  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
 
-  // Root cause: blessed doesn't clear characters beyond new content length
-  // Solution: Pad based on DISPLAY length (after stripping tags) to 200 chars
-  const paddedMessage = message.split('\n').map(line => {
-    const displayLen = stripBlessedTags(line).length;
-    return line + ' '.repeat(Math.max(0, 200 - displayLen));
-  }).join('\n');
-
-  const paddedHelp = helpText.split('\n').map(line => {
-    const displayLen = stripBlessedTags(line).length;
-    return line + ' '.repeat(Math.max(0, 200 - displayLen));
-  }).join('\n');
-
-  statusBox!.setContent(`\n  {bold}{white-fg}${paddedMessage}{/white-fg}{/bold}\n\n  ${paddedHelp}`);
+  statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n\n  ${helpText}`);
   screen!.render();
 }
 

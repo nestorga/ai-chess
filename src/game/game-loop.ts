@@ -39,14 +39,14 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     // Set input active flag for global handler coordination
     setInputActive(true);
 
-    // Display prompt with all valid moves (add line breaks every 16 moves for readability)
-    const movesPerLine = 16;
+    // Display prompt with all valid moves (add line breaks every 10 moves for readability)
+    const movesPerLine = 10;
     const movesLines: string[] = [];
     for (let i = 0; i < validMoves.length; i += movesPerLine) {
       movesLines.push('  ' + validMoves.slice(i, i + movesPerLine).join(', '));
     }
     const movesText = `  Valid moves:\n${movesLines.join('\n')}`;
-    displayMessage(`Your move?\n\n${movesText}`);
+    displayMessage(`Your move?\n${movesText}`);
     inputBox.focus();
     screen.render();
 
@@ -72,7 +72,7 @@ async function promptForMove(validMoves: string[]): Promise<string> {
           resolve(move);
         } else {
           // Invalid move - redisplay prompt with valid moves
-          displayMessage(`Invalid move: "${move}". Try again.\n\n${movesText}`);
+          displayMessage(`Invalid move: "${move}". Try again.\n${movesText}`);
           inputBuffer = '';
           setInputContent('');  // Clear (prefix ensures visibility)
           inputBox.focus();  // Refocus input box after invalid move
