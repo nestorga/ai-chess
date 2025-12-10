@@ -61,6 +61,11 @@ export function initializeScreen(): void {
       fg: 'white',
       border: {
         fg: 'magenta'
+      },
+      focus: {
+        border: {
+          fg: 'yellow'
+        }
       }
     },
     label: ' AI Working Memory (Tab to focus, ↑↓ to scroll) ',
@@ -112,9 +117,9 @@ export function initializeScreen(): void {
     const confirmBox = blessed.box({
       top: 'center',
       left: 'center',
-      width: 60,
-      height: 9,
-      content: '\n  {center}{bold}{white-fg}Quit game?{/white-fg}{/bold}{/center}\n\n  {center}Press {green-fg}{bold}Y{/bold}{/green-fg} to quit, {yellow-fg}{bold}N{/bold}{/yellow-fg} to continue{/center}',
+      width: 50,
+      height: 7,
+      content: '{center}{bold}Quit game?{/bold}{/center}\n\n{center}Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue{/center}',
       tags: true,
       border: {
         type: 'line'

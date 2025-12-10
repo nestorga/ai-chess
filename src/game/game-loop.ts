@@ -45,6 +45,11 @@ async function promptForMove(validMoves: string[]): Promise<string> {
         bg: 'blue',
         border: {
           fg: 'green'
+        },
+        focus: {
+          border: {
+            fg: 'yellow'
+          }
         }
       },
       label: ' Enter Move ',
@@ -54,6 +59,26 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     });
 
     screen.append(inputBox);
+
+    // Disable ESC key on input box (let global handler manage it)
+    inputBox.key(['escape'], () => {
+      // Do nothing - global handler will show quit dialog
+      return false;
+    });
+
+    // Enable Tab key to switch focus away from input box
+    inputBox.key(['tab'], () => {
+      screen.focusNext();
+      screen.render();
+      return false;
+    });
+
+    inputBox.key(['S-tab'], () => {
+      screen.focusPrevious();
+      screen.render();
+      return false;
+    });
+
     inputBox.focus();
 
     inputBox.on('submit', (value: string) => {
