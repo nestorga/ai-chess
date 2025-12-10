@@ -75,28 +75,27 @@ async function promptForMove(validMoves: string[]): Promise<string> {
             fg: 'red'
           }
         },
-        label: ' Confirm Quit '
+        label: ' Confirm Quit ',
+        keys: true,
+        vi: true
       });
 
       screen.append(confirmBox);
       confirmBox.focus();
       screen.render();
 
-      const onConfirmKey = (ch: any, key: any) => {
-        if (key.name === 'y') {
-          confirmBox.detach();
-          inputBox.detach();
-          screen.removeListener('keypress', onConfirmKey);
-          reject(new Error('User quit'));
-        } else if (key.name === 'n' || key.name === 'escape') {
-          confirmBox.detach();
-          inputBox.focus();
-          screen.render();
-          screen.removeListener('keypress', onConfirmKey);
-        }
-      };
+      // Handle keys on the confirm box itself
+      confirmBox.key(['y', 'Y'], () => {
+        confirmBox.detach();
+        inputBox.detach();
+        reject(new Error('User quit'));
+      });
 
-      screen.on('keypress', onConfirmKey);
+      confirmBox.key(['n', 'N', 'escape'], () => {
+        confirmBox.detach();
+        inputBox.focus();
+        screen.render();
+      });
     });
 
     inputBox.on('submit', (value: string) => {
