@@ -23,12 +23,12 @@ export function initializeScreen(): void {
     fullUnicode: true
   });
 
-  // Board display (left side - 40%)
+  // Board display (top left - 40% width, 50% height)
   boardBox = blessed.box({
     top: 0,
     left: 0,
     width: '40%',
-    height: '75%',
+    height: '50%',
     content: '',
     tags: true,
     border: {
@@ -44,12 +44,33 @@ export function initializeScreen(): void {
     focusable: false
   });
 
-  // Working memory display (right side - 60%)
+  // Status bar (bottom left - 40% width, 50% height)
+  statusBox = blessed.box({
+    top: '50%',
+    left: 0,
+    width: '40%',
+    height: '50%',
+    content: '',
+    tags: true,
+    border: {
+      type: 'line'
+    },
+    style: {
+      fg: 'white',
+      border: {
+        fg: 'yellow'
+      }
+    },
+    label: ' Status ',
+    focusable: false
+  });
+
+  // Working memory display (full right side - 60% width, 100% height)
   memoryBox = blessed.box({
     top: 0,
     left: '40%',
     width: '60%',
-    height: '75%',
+    height: '100%',
     content: '',
     tags: true,
     border: {
@@ -79,27 +100,6 @@ export function initializeScreen(): void {
     vi: true,
     mouse: false,
     focusable: true
-  });
-
-  // Status bar (bottom - 25% for better visibility)
-  statusBox = blessed.box({
-    top: '75%',
-    left: 0,
-    width: '100%',
-    height: '25%',
-    content: '',
-    tags: true,
-    border: {
-      type: 'line'
-    },
-    style: {
-      fg: 'white',
-      border: {
-        fg: 'yellow'
-      }
-    },
-    label: ' Status ',
-    focusable: false
   });
 
   screen.append(boardBox);

@@ -241,6 +241,10 @@ export async function humanVsAIGame(playerColor: Color): Promise<void> {
 export async function aiVsAIGame(): Promise<void> {
   initializeScreen();
 
+  // Focus memory box for scrolling (since there's no input box in AI vs AI)
+  getMemoryBox()?.focus();
+  getScreen()?.render();
+
   const game = new GameEngine();
   gameState.setGame(game);
 
