@@ -44,12 +44,12 @@ export function initializeScreen(): void {
     focusable: false
   });
 
-  // Status bar (bottom left - 40% width, 50% height)
+  // Status bar (bottom left - 40% width, fills remaining space)
   statusBox = blessed.box({
     top: '50%',
     left: 0,
     width: '40%',
-    height: '50%',
+    bottom: 0,
     content: '',
     tags: true,
     border: {
