@@ -293,7 +293,9 @@ export function displayMessage(message: string): void {
   }
 
   const helpText = `{yellow-fg}Commands:{/yellow-fg}\n  {cyan-fg}Tab{/cyan-fg} - Cycle focus  |  {cyan-fg}↑↓{/cyan-fg} - Scroll memory  |  {cyan-fg}Ctrl+C{/cyan-fg} - Quit  |  {cyan-fg}Enter{/cyan-fg} - Submit move`;
-  statusBox!.setContent(`\n  {bold}{white-fg}${message}{/white-fg}{/bold}\n\n  ${helpText}`);
+  // Pad the message with spaces to ensure full width coverage and avoid character retention
+  const paddedMessage = `\n  {bold}{white-fg}${message}${' '.repeat(100)}{/white-fg}{/bold}\n\n  ${helpText}`;
+  statusBox!.setContent(paddedMessage);
   screen!.render();
 }
 

@@ -36,7 +36,11 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     inputBox.show();
     setInputContent('');  // Clear display
 
-    displayMessage('Your move? (or "moves" to see valid moves)');
+    // Display prompt with valid moves
+    const movesText = validMoves.length <= 20
+      ? `Valid moves: ${validMoves.join(', ')}`
+      : `${validMoves.length} valid moves available`;
+    displayMessage(`Your move?\n\n${movesText}`);
     inputBox.focus();
     screen.render();
 
@@ -68,14 +72,6 @@ async function promptForMove(validMoves: string[]): Promise<string> {
       if (key.name === 'enter') {
         const move = inputBuffer.trim();
 
-        if (move.toLowerCase() === 'moves') {
-          displayMessage(`Valid moves: ${validMoves.join(', ')}`);
-          inputBuffer = '';
-          setInputContent('');
-          screen.render();
-          return;
-        }
-
         if (validMoves.includes(move)) {
           // Valid move
           cleanup();
@@ -83,10 +79,11 @@ async function promptForMove(validMoves: string[]): Promise<string> {
           screen.render();
           resolve(move);
         } else {
-          // Invalid move
-          displayMessage(`Invalid move: "${move}". Try again.`);
+          // Invalid move - redisplay prompt with valid moves
+          displayMessage(`Invalid move: "${move}". Try again.\n\n${movesText}`);
           inputBuffer = '';
           setInputContent('');
+          inputBox.focus();  // Refocus input box after invalid move
           screen.render();
         }
         return;
