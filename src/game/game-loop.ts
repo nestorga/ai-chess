@@ -53,22 +53,51 @@ async function promptForMove(validMoves: string[]): Promise<string> {
     });
 
     screen.append(inputBox);
-
-    // Keep screen-level handlers active by handling keys on the screen, not just the input
-    const screenKeyHandler = (ch: any, key: any) => {
-      // ESC or Q to quit
-      if (key.name === 'escape' || key.name === 'q') {
-        screen.removeListener('keypress', screenKeyHandler);
-        inputBox.detach();
-        // Trigger the global quit handler
-        screen.emit('keypress', ch, key);
-        reject(new Error('User quit'));
-        return;
-      }
-    };
-
-    screen.on('keypress', screenKeyHandler);
     inputBox.focus();
+
+    // Handle ESC/Q to show quit confirmation dialog
+    inputBox.key(['escape', 'C-c'], () => {
+      // Show quit confirmation
+      const confirmBox = blessed.box({
+        top: 'center',
+        left: 'center',
+        width: 50,
+        height: 7,
+        content: '\n  {bold}Quit game?{/bold}\n\n  Press {green-fg}Y{/green-fg} to quit, {yellow-fg}N{/yellow-fg} or {yellow-fg}ESC{/yellow-fg} to continue',
+        tags: true,
+        border: {
+          type: 'line'
+        },
+        style: {
+          fg: 'white',
+          bg: 'red',
+          border: {
+            fg: 'red'
+          }
+        },
+        label: ' Confirm Quit '
+      });
+
+      screen.append(confirmBox);
+      confirmBox.focus();
+      screen.render();
+
+      const onConfirmKey = (ch: any, key: any) => {
+        if (key.name === 'y') {
+          confirmBox.detach();
+          inputBox.detach();
+          screen.removeListener('keypress', onConfirmKey);
+          reject(new Error('User quit'));
+        } else if (key.name === 'n' || key.name === 'escape') {
+          confirmBox.detach();
+          inputBox.focus();
+          screen.render();
+          screen.removeListener('keypress', onConfirmKey);
+        }
+      };
+
+      screen.on('keypress', onConfirmKey);
+    });
 
     inputBox.on('submit', (value: string) => {
       const move = value.trim();
@@ -82,7 +111,6 @@ async function promptForMove(validMoves: string[]): Promise<string> {
       }
 
       if (validMoves.includes(move)) {
-        screen.removeListener('keypress', screenKeyHandler);
         inputBox.detach();
         screen.render();
         resolve(move);
@@ -92,14 +120,6 @@ async function promptForMove(validMoves: string[]): Promise<string> {
         inputBox.focus();
         screen.render();
       }
-    });
-
-    inputBox.on('cancel', () => {
-      screen.removeListener('keypress', screenKeyHandler);
-      inputBox.detach();
-      // Trigger the global quit handler
-      screen.emit('keypress', null, { name: 'escape' });
-      reject(new Error('User quit'));
     });
 
     screen.render();
