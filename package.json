@@ -21,7 +21,7 @@
     "claude"
   ],
   "author": "",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.53",
     "@mastra/core": "^0.24.6",

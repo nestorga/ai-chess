@@ -241,3 +241,7 @@ Your move?
 ## Credits
 
 Created for the AI Bootcamp Hackathon using the Mastra framework.
+
+## License
+
+MIT
