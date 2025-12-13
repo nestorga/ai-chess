@@ -1,14 +1,14 @@
 # AI Chess Agent
 
-An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic working memory capabilities. Watch the AI think strategically, learn opponent patterns, and adapt its gameplay in real-time!
+An intelligent chess-playing AI agent powered by state-of-the-art language models (Claude Haiku/Sonnet/Opus 4.5, Gemini 3 Pro, Gemini 2.5 Flash, and GPT-5.2) with strategic working memory capabilities. Watch the AI think strategically, learn opponent patterns, and adapt its gameplay in real-time!
 
 ## Features
 
-- **Strategic AI Agent**: Powered by Claude Haiku 4.5 with sophisticated chess knowledge
+- **Multiple AI Models**: Choose from Claude Haiku/Sonnet/Opus 4.5, Gemini 3 Pro, Gemini 2.5 Flash, or GPT-5.2, each with sophisticated chess knowledge
 - **Working Memory**: AI maintains strategic understanding of the game, opponent analysis, and adapts its play style
 - **Two Game Modes**:
   - **Human vs AI**: Play against the AI agent
-  - **AI vs AI**: Watch two AI agents battle each other
+  - **AI vs AI**: Watch two AI agents battle each other (even different models!)
 - **Clean CLI Interface**: Unicode chess pieces with terminal-based UI
 - **Position Analysis**: Real-time evaluation of material, center control, king safety, and more
 - **Move Validation**: All moves are validated using the chess.js library
@@ -26,12 +26,22 @@ An intelligent chess-playing AI agent powered by Claude Haiku 4.5 with strategic
    npm install
    ```
 
-3. Set up your API key:
-   - Create a `.env` file in the project root and add your Anthropic API key:
+3. Set up your API keys:
+   - Create a `.env` file in the project root
+   - For Claude models (haiku, sonnet, opus), add your Anthropic API key:
    ```bash
-   ANTHROPIC_API_KEY=your_api_key_here
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   ```
+   - For Gemini models (gemini, gemini-flash), add your Google API key:
+   ```bash
+   GOOGLE_GENERATIVE_AI_API_KEY=your_google_api_key_here
+   ```
+   - For OpenAI models (gpt5), add your OpenAI API key:
+   ```bash
+   OPENAI_API_KEY=your_openai_api_key_here
    ```
    - **Important**: The `.env` file is automatically loaded when you use the npm scripts (`npm run play`, etc.)
+   - You only need the API key for the model you plan to use
 
 ## Usage
 
@@ -47,6 +57,15 @@ Play as black:
 npm run play -- --color black
 ```
 
+Choose a different AI model:
+```bash
+npm run play -- --model gemini-3
+npm run play -- --model gemini-flash
+npm run play -- --model gpt-5.2
+npm run play -- --model sonnet
+npm run play -- --model opus
+```
+
 ### Watch AI vs AI
 
 Watch two AI agents play against each other:
@@ -57,6 +76,13 @@ npm run play:ai-vs-ai
 Or use the full command:
 ```bash
 npm run play -- --mode ai-ai
+```
+
+Watch different AI models play against each other:
+```bash
+npm run play -- --mode ai-ai --white-model sonnet --black-model gemini-3
+npm run play -- --mode ai-ai --white-model gpt-5.2 --black-model gemini-flash
+npm run play -- --mode ai-ai --white-model opus --black-model haiku
 ```
 
 ### Debugging and Error Logs
@@ -88,7 +114,8 @@ The project is structured into several key layers:
    - `get-game-history`: Retrieves move history
 
 3. **Chess Agent** ([src/mastra/agents/chess-agent.ts](src/mastra/agents/chess-agent.ts))
-   - Uses Claude Haiku 4.5 for cost-efficient gameplay
+   - Supports multiple AI models: Claude Haiku/Sonnet/Opus 4.5, Gemini 3 Pro, Gemini 2.5 Flash, and GPT-5.2
+   - Automatically selects the appropriate SDK (Anthropic, Google, or OpenAI) based on the chosen model
    - Comprehensive chess instructions covering opening, middlegame, and endgame
    - Working memory tracks opponent patterns and strategic assessment
    - Equipped with all chess tools for informed decision-making
@@ -138,7 +165,10 @@ The agent uses its working memory to:
 
 ## Technical Stack
 
-- **AI Model**: Claude Haiku 4.5 (via Anthropic API)
+- **AI Models**:
+  - Claude Haiku 4.5, Sonnet 4.5, Opus 4.5 (via Anthropic API)
+  - Gemini 3 Pro, Gemini 2.5 Flash (via Google Generative AI API)
+  - GPT-5.2 (via OpenAI API)
 - **Framework**: Mastra (for agent orchestration and memory)
 - **Chess Engine**: chess.js (for move validation and rules)
 - **CLI**: Commander.js, Blessed (TUI), Chalk
@@ -175,12 +205,38 @@ ai-chess/
 
 ## Cost Efficiency
 
-This project uses **Claude Haiku 4.5**, which is:
+This project supports multiple AI models with different cost and performance characteristics:
+
+**Claude Haiku 4.5** (default):
 - 4-5x faster than Claude Sonnet
 - Significantly cheaper per token
-- Still highly capable for strategic chess play
+- Highly capable for strategic chess play
+- A typical game costs only a few cents
 
-A typical game costs only a few cents in API usage.
+**Claude Sonnet 4.5**:
+- Better strategic understanding
+- Higher cost per token than Haiku
+- Excellent for challenging games
+
+**Claude Opus 4.5**:
+- Most advanced reasoning
+- Highest cost per token
+- Best for maximum game strength
+
+**Gemini 3 Pro**:
+- Google's premium model
+- Competitive pricing
+- Strong reasoning capabilities
+
+**Gemini 2.5 Flash**:
+- Google's fastest model
+- Very cost-effective
+- Excellent balance of speed and capability
+
+**GPT-5.2**:
+- OpenAI's latest model
+- Advanced reasoning and strategic thinking
+- Premium pricing for cutting-edge performance
 
 ## Development
 

@@ -4,6 +4,8 @@ import { LibSQLStore } from '@mastra/libsql';
 import { LibSQLVector } from '@mastra/libsql';
 import { fastembed } from '@mastra/fastembed';
 import { anthropic } from '@ai-sdk/anthropic';
+import { google } from '@ai-sdk/google';
+import { openai } from '@ai-sdk/openai';
 import { getValidMoves } from '../tools/get-valid-moves.js';
 import { makeMove } from '../tools/make-move.js';
 import { analyzePosition } from '../tools/analyze-position.js';
@@ -35,6 +37,17 @@ function createChessMemory(agentName: string): Memory {
 export function createChessAgent(agentName: string, modelName: ModelName = 'haiku'): { agent: Agent; memory: Memory } {
   const memory = createChessMemory(agentName);
   const modelId = getModelId(modelName);
+
+  // Select appropriate SDK based on model type
+  let model;
+  if (modelName.includes(('gemini'))) {
+    model = google(modelId);
+  } else if (modelName.includes('gpt')) {
+    model = openai(modelId);
+  } else {
+    // Claude models (haiku, sonnet, opus)
+    model = anthropic(modelId);
+  }
 
   const agent = new Agent({
     name: agentName,
@@ -128,7 +141,7 @@ When it's your turn:
 6. Briefly explain your strategic thinking
 
 Play strong chess and may the best player win!`,
-    model: anthropic(modelId),
+    model: model,
     tools: {
       getValidMoves,
       makeMove,
