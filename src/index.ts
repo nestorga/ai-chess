@@ -18,9 +18,9 @@ program
   .description('Start a new chess game')
   .option('-m, --mode <mode>', 'Game mode: human-ai or ai-ai', 'human-ai')
   .option('-c, --color <color>', 'Your color when playing vs AI (white/black)', 'white')
-  .option('--model <model>', 'AI model: haiku, sonnet, or opus', 'haiku')
-  .option('--white-model <model>', 'White AI model (AI vs AI only): haiku, sonnet, or opus')
-  .option('--black-model <model>', 'Black AI model (AI vs AI only): haiku, sonnet, or opus')
+  .option('--model <model>', 'AI model: haiku, sonnet, opus, gemini-3, gemini-flash, or gpt-5.2', 'haiku')
+  .option('--white-model <model>', 'White AI model (AI vs AI only): haiku, sonnet, opus, gemini-3, gemini-flash, or gpt-5.2')
+  .option('--black-model <model>', 'Black AI model (AI vs AI only): haiku, sonnet, opus, gemini-3, gemini-flash, or gpt-5.2')
   .action(async (options) => {
     const mode = options.mode;
     const color = options.color.toLowerCase();
@@ -42,18 +42,18 @@ program
 
     // Validate main model
     if (!isValidModelName(modelName)) {
-      console.error(chalk.red('Error: Model must be "haiku", "sonnet", or "opus"'));
+      console.error(chalk.red('Error: Model must be "haiku", "sonnet", "opus", "gemini-3", "gemini-flash", or "gpt-5.2"'));
       process.exit(1);
     }
 
     // For AI vs AI: validate white/black models if provided
     if (mode === 'ai-ai') {
       if (whiteModelName && !isValidModelName(whiteModelName)) {
-        console.error(chalk.red('Error: --white-model must be "haiku", "sonnet", or "opus"'));
+        console.error(chalk.red('Error: --white-model must be "haiku", "sonnet", "opus", "gemini-3", "gemini-flash", or "gpt-5.2"'));
         process.exit(1);
       }
       if (blackModelName && !isValidModelName(blackModelName)) {
-        console.error(chalk.red('Error: --black-model must be "haiku", "sonnet", or "opus"'));
+        console.error(chalk.red('Error: --black-model must be "haiku", "sonnet", "opus", "gemini-3", "gemini-flash", or "gpt-5.2"'));
         process.exit(1);
       }
     }
